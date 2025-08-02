@@ -1,0 +1,60 @@
+{
+  "name": "GameSession",
+  "type": "object",
+  "properties": {
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ],
+      "description": "Game difficulty level"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "colors",
+        "animals",
+        "flags",
+        "food",
+        "sport",
+        "brands"
+      ],
+      "description": "Game theme"
+    },
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number",
+            "default": 0
+          },
+          "matches": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      },
+      "description": "List of players and their scores"
+    },
+    "winner_name": {
+      "type": "string",
+      "description": "Name of the winning player"
+    },
+    "total_pairs": {
+      "type": "number",
+      "description": "Total number of pairs in the game"
+    },
+    "game_duration": {
+      "type": "number",
+      "description": "Game duration in seconds"
+    }
+  },
+  "required": []
+}
