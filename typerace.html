@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Typing Race</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Nav Bar ── */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 8px 22px;
+      border-radius: 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background 0.25s, transform 0.15s;
+      background: rgba(255,255,255,0.1);
+    }
+    .navbar a:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+    .navbar a.active { background: rgba(255,255,255,0.3); }
+
+    /* ── Layout ── */
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: calc(100vh - 52px);
+      padding: 10px 20px 0;
+    }
+
+    h1 {
+      color: white;
+      font-size: 2.2rem;
+      margin: 8px 0 6px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* ── HUD ── */
+    .hud {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .hud-item {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(6px);
+      padding: 6px 18px;
+      border-radius: 18px;
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .hud-item.warning { animation: pulse 0.5s infinite alternate; }
+    @keyframes pulse { to { background: rgba(255,80,80,0.5); } }
+
+    /* ── Difficulty picker ── */
+    .menu {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin-top: 60px;
+    }
+    .menu p { color: rgba(255,255,255,0.85); font-size: 1.15rem; }
+    .diff-buttons { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+    .diff-btn {
+      padding: 14px 32px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      color: white;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    }
+    .diff-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+    .diff-btn.easy   { background: linear-gradient(135deg, #56ab2f, #a8e063); }
+    .diff-btn.medium { background: linear-gradient(135deg, #f7971e, #ffd200); }
+    .diff-btn.hard   { background: linear-gradient(135deg, #e44d26, #ff6b6b); }
+
+    /* ── Game Area ── */
+    .game-area {
+      position: relative;
+      width: 100%;
+      max-width: 700px;
+      flex: 1;
+      background: rgba(255,255,255,0.07);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.15);
+    }
+
+    /* Danger zone */
+    .danger-zone {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: linear-gradient(to top, rgba(255,50,50,0.45), transparent);
+      border-bottom: 3px solid rgba(255,80,80,0.7);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ── Falling words ── */
+    .falling-word {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+      padding: 6px 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(4px);
+      white-space: nowrap;
+      transition: none;
+      z-index: 1;
+    }
+    .falling-word .matched-char {
+      color: #7dff7d;
+      text-shadow: 0 0 6px rgba(100,255,100,0.6);
+    }
+    .falling-word.success {
+      animation: wordSuccess 0.4s ease forwards;
+    }
+    @keyframes wordSuccess {
+      0%   { transform: scale(1); opacity: 1; background: rgba(100,255,100,0.4); }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+    .falling-word.miss {
+      animation: wordMiss 0.35s ease forwards;
+    }
+    @keyframes wordMiss {
+      0%   { opacity: 1; background: rgba(255,50,50,0.5); }
+      100% { opacity: 0; transform: translateY(20px); }
+    }
+
+    /* ── Input ── */
+    .input-row {
+      width: 100%;
+      max-width: 700px;
+      margin: 10px 0 10px;
+    }
+    .input-row input {
+      width: 100%;
+      padding: 14px 22px;
+      font-size: 1.4rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 18px;
+      outline: none;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.2);
+      color: #333;
+      letter-spacing: 1px;
+    }
+    .input-row input:focus {
+      box-shadow: 0 4px 18px rgba(100,126,234,0.5);
+    }
+
+    /* ── Combo popup ── */
+    .combo-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.5);
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #ffd200;
+      text-shadow: 0 0 20px rgba(255,180,0,0.7);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 200;
+    }
+    .combo-popup.show {
+      animation: comboPop 0.8s ease forwards;
+    }
+    @keyframes comboPop {
+      0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+      40%  { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+      100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
+    }
+
+    /* ── Results overlay ── */
+    .results-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 300;
+      justify-content: center;
+      align-items: center;
+    }
+    .results-overlay.show { display: flex; }
+
+    .results-box {
+      background: white;
+      border-radius: 25px;
+      padding: 36px 44px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      animation: popIn 0.45s ease;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .results-box h2 {
+      font-size: 2.2rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 18px;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #f0f0f5, #e8e8f0);
+      border-radius: 14px;
+      padding: 14px 10px;
+    }
+    .stat-card .label { font-size: 0.85rem; color: #888; margin-bottom: 4px; }
+    .stat-card .value { font-size: 1.6rem; font-weight: 800; color: #444; }
+    .stat-card.full { grid-column: 1 / -1; }
+
+    .results-box button {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 34px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .results-box button:hover { transform: scale(1.06); }
+
+    @keyframes popIn {
+      0%   { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="navbar">
+    <a href="index.html">Memory Match</a>
+    <a href="typerace.html" class="active">Typing Race</a>
+  </nav>
+
+  <div class="container">
+    <h1>Typing Race</h1>
+
+    <!-- HUD (hidden until game starts) -->
+    <div class="hud hidden" id="hud">
+      <div class="hud-item" id="hud-score">Score: 0</div>
+      <div class="hud-item" id="hud-combo">Combo: 0</div>
+      <div class="hud-item" id="hud-timer">Time: 60s</div>
+    </div>
+
+    <!-- Difficulty menu -->
+    <div class="menu" id="menu">
+      <p>Choose your difficulty</p>
+      <div class="diff-buttons">
+        <button class="diff-btn easy"   onclick="startGame('easy')">Easy</button>
+        <button class="diff-btn medium" onclick="startGame('medium')">Medium</button>
+        <button class="diff-btn hard"   onclick="startGame('hard')">Hard</button>
+      </div>
+    </div>
+
+    <!-- Game area -->
+    <div class="game-area hidden" id="game-area">
+      <div class="danger-zone"></div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-row hidden" id="input-row">
+      <input type="text" id="word-input" placeholder="Type the falling words..." autocomplete="off" autofocus>
+    </div>
+  </div>
+
+  <!-- Combo popup -->
+  <div class="combo-popup" id="combo-popup"></div>
+
+  <!-- Results -->
+  <div class="results-overlay" id="results">
+    <div class="results-box">
+      <h2>Time's Up!</h2>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="label">Score</div>
+          <div class="value" id="r-score">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Words Typed</div>
+          <div class="value" id="r-words">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Accuracy</div>
+          <div class="value" id="r-accuracy">0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Best Combo</div>
+          <div class="value" id="r-combo">0</div>
+        </div>
+        <div class="stat-card full">
+          <div class="label">Words Per Minute</div>
+          <div class="value" id="r-wpm">0</div>
+        </div>
+      </div>
+      <button onclick="backToMenu()">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    /* ── Word Banks ── */
+    const WORDS = {
+      easy: [
+        'cat','dog','sun','hat','cup','red','big','run','sit','box',
+        'map','bus','pen','leg','arm','bed','pot','fan','jam','nut',
+        'bat','cow','fly','hop','ice','joy','key','log','mud','net',
+        'owl','pig','rug','saw','top','van','web','yak','zip','ant'
+      ],
+      medium: [
+        'apple','robot','plant','light','music','happy','cloud','dream','ocean','tiger',
+        'candy','dance','flame','ghost','jumps','lemon','mango','noble','piano','queen',
+        'snake','truck','unity','vivid','water','youth','zebra','brave','crisp','frost',
+        'grape','hiker','joker','kayak','lunar','magic','nerve','orbit','pearl','quick'
+      ],
+      hard: [
+        'dolphin','rainbow','giraffe','monster','kingdom','bicycle','chicken','diamond',
+        'eclipse','fantasy','gorilla','hammock','iceberg','javelin','kitchen','lantern',
+        'musical','narwhal','octopus','penguin','quarter','radical','serpent','tornado',
+        'unicorn','village','warrior','xylitol','younger','zillion','battery','captain',
+        'dustbin','earring','feather','glacier','history','insider','juggler','kibbutz'
+      ]
+    };
+
+    /* ── Game State ── */
+    let difficulty = 'easy';
+    let score = 0;
+    let combo = 0;
+    let bestCombo = 0;
+    let wordsTyped = 0;
+    let totalKeystrokes = 0;
+    let correctKeystrokes = 0;
+    let timeLeft = 60;
+    let gameRunning = false;
+    let timerInterval = null;
+    let spawnInterval = null;
+    let animFrame = null;
+    let fallingWords = [];       // { el, word, x, y, speed }
+    let wordIdCounter = 0;
+    let gameStartTime = 0;
+
+    const $ = id => document.getElementById(id);
+
+    /* ── Start Game ── */
+    function startGame(diff) {
+      difficulty = diff;
+      score = 0;
+      combo = 0;
+      bestCombo = 0;
+      wordsTyped = 0;
+      totalKeystrokes = 0;
+      correctKeystrokes = 0;
+      timeLeft = 60;
+      gameRunning = true;
+      fallingWords = [];
+      wordIdCounter = 0;
+      gameStartTime = Date.now();
+
+      // Show / hide UI
+      $('menu').classList.add('hidden');
+      $('hud').classList.remove('hidden');
+      $('game-area').classList.remove('hidden');
+      $('input-row').classList.remove('hidden');
+      $('results').classList.remove('show');
+      $('game-area').innerHTML = '<div class="danger-zone"></div>';
+      $('word-input').value = '';
+      $('word-input').focus();
+
+      updateHUD();
+      timerInterval = setInterval(tick, 1000);
+      scheduleSpawn();
+      animFrame = requestAnimationFrame(gameLoop);
+    }
+
+    /* ── Timer ── */
+    function tick() {
+      timeLeft--;
+      updateHUD();
+      if (timeLeft <= 0) endGame();
+    }
+
+    /* ── Spawn words ── */
+    function scheduleSpawn() {
+      if (!gameRunning) return;
+      spawnWord();
+      const elapsed = 60 - timeLeft;
+      // Spawn faster as time goes on
+      const base = difficulty === 'easy' ? 2200 : difficulty === 'medium' ? 1900 : 1500;
+      const delay = Math.max(700, base - elapsed * 18);
+      spawnInterval = setTimeout(scheduleSpawn, delay);
+    }
+
+    function randomWord() {
+      const bank = WORDS[difficulty];
+      return bank[Math.floor(Math.random() * bank.length)];
+    }
+
+    function spawnWord() {
+      if (!gameRunning) return;
+      const area = $('game-area');
+      const areaW = area.clientWidth;
+      const word = randomWord();
+
+      const el = document.createElement('div');
+      el.className = 'falling-word';
+      el.textContent = word;
+      el.id = 'fw-' + (wordIdCounter++);
+      area.appendChild(el);
+
+      // Position — keep within bounds
+      const elW = el.offsetWidth;
+      const x = Math.random() * Math.max(0, areaW - elW - 20) + 10;
+
+      const elapsed = 60 - timeLeft;
+      const baseSpeed = difficulty === 'easy' ? 0.6 : difficulty === 'medium' ? 0.8 : 1.1;
+      const speed = baseSpeed + elapsed * 0.012;
+
+      const entry = { el, word, x, y: -40, speed };
+      el.style.left = x + 'px';
+      el.style.top = '-40px';
+      fallingWords.push(entry);
+    }
+
+    /* ── Main game loop ── */
+    let lastTime = 0;
+    function gameLoop(ts) {
+      if (!gameRunning) return;
+      const dt = lastTime ? (ts - lastTime) : 16;
+      lastTime = ts;
+
+      const area = $('game-area');
+      const areaH = area.clientHeight;
+
+      for (let i = fallingWords.length - 1; i >= 0; i--) {
+        const fw = fallingWords[i];
+        fw.y += fw.speed * (dt / 16);
+        fw.el.style.top = fw.y + 'px';
+
+        // Hit danger zone
+        if (fw.y > areaH - 30) {
+          missWord(i);
+        }
+      }
+
+      animFrame = requestAnimationFrame(gameLoop);
+    }
+
+    function missWord(index) {
+      const fw = fallingWords[index];
+      fw.el.classList.add('miss');
+      combo = 0;
+      updateHUD();
+      setTimeout(() => fw.el.remove(), 350);
+      fallingWords.splice(index, 1);
+    }
+
+    /* ── Input handling ── */
+    $('word-input').addEventListener('input', () => {
+      const val = $('word-input').value.trim().toLowerCase();
+      totalKeystrokes++;
+
+      // Highlight matching characters on all falling words
+      for (const fw of fallingWords) {
+        if (fw.word.startsWith(val) && val.length > 0) {
+          renderHighlight(fw, val.length);
+        } else {
+          renderHighlight(fw, 0);
+        }
+      }
+
+      // Check for a complete match
+      for (let i = 0; i < fallingWords.length; i++) {
+        if (fallingWords[i].word === val) {
+          correctWord(i);
+          $('word-input').value = '';
+          // Re-clear highlights
+          for (const fw of fallingWords) renderHighlight(fw, 0);
+          break;
+        }
+      }
+    });
+
+    function renderHighlight(fw, count) {
+      const w = fw.word;
+      if (count === 0) {
+        fw.el.innerHTML = escapeHTML(w);
+        return;
+      }
+      fw.el.innerHTML =
+        '<span class="matched-char">' + escapeHTML(w.slice(0, count)) + '</span>' +
+        escapeHTML(w.slice(count));
+    }
+
+    function escapeHTML(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function correctWord(index) {
+      const fw = fallingWords[index];
+      correctKeystrokes += fw.word.length;
+      wordsTyped++;
+      combo++;
+      if (combo > bestCombo) bestCombo = combo;
+
+      // Score: base + length bonus + combo bonus
+      const lengthBonus = fw.word.length * 10;
+      const comboBonus = Math.floor(combo / 3) * 25;
+      score += 50 + lengthBonus + comboBonus;
+
+      // Combo fire popup every 3
+      if (combo > 0 && combo % 3 === 0) {
+        showCombo(combo);
+      }
+
+      fw.el.classList.add('success');
+      setTimeout(() => fw.el.remove(), 400);
+      fallingWords.splice(index, 1);
+
+      updateHUD();
+    }
+
+    function showCombo(c) {
+      const popup = $('combo-popup');
+      popup.textContent = c + 'x Combo!';
+      popup.classList.remove('show');
+      void popup.offsetWidth; // reflow
+      popup.classList.add('show');
+    }
+
+    /* ── HUD ── */
+    function updateHUD() {
+      $('hud-score').textContent = 'Score: ' + score;
+      $('hud-combo').textContent = 'Combo: ' + combo;
+      $('hud-timer').textContent = 'Time: ' + timeLeft + 's';
+
+      const timerEl = $('hud-timer');
+      if (timeLeft <= 10) {
+        timerEl.classList.add('warning');
+      } else {
+        timerEl.classList.remove('warning');
+      }
+    }
+
+    /* ── End Game ── */
+    function endGame() {
+      gameRunning = false;
+      clearInterval(timerInterval);
+      clearTimeout(spawnInterval);
+      cancelAnimationFrame(animFrame);
+      lastTime = 0;
+
+      const elapsed = (Date.now() - gameStartTime) / 1000 / 60; // minutes
+      const wpm = elapsed > 0 ? Math.round(wordsTyped / elapsed) : 0;
+      const accuracy = totalKeystrokes > 0
+        ? Math.round((correctKeystrokes / totalKeystrokes) * 100) : 0;
+
+      $('r-score').textContent = score;
+      $('r-words').textContent = wordsTyped;
+      $('r-accuracy').textContent = accuracy + '%';
+      $('r-combo').textContent = bestCombo;
+      $('r-wpm').textContent = wpm;
+
+      $('results').classList.add('show');
+    }
+
+    function backToMenu() {
+      $('results').classList.remove('show');
+      $('hud').classList.add('hidden');
+      $('game-area').classList.add('hidden');
+      $('input-row').classList.add('hidden');
+      $('menu').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

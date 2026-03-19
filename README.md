@@ -1,14 +1,21 @@
-# Kids Memory Match Game
+# Kids Game Studio
 
-A fun memory card matching game built for a class of 8-9 year olds!
+A collection of fun games built for a class of 8-9 year olds!
 
-## How to Play
+## Games
 
-1. Open `index.html` in your browser (just double-click it!)
-2. Click on a card to flip it
-3. Click on another card to find a match
-4. Match all pairs to win!
+### Memory Match (`index.html`)
+Flip cards to find matching emoji pairs. Track your moves and try to beat your record!
+
+### Typing Race (`typerace.html`)
+Words fall from the sky — type them before they hit the danger zone!
+- 3 difficulty levels: Easy, Medium, Hard
+- Combo system with bonus points
+- 60-second timer
+- Stats: score, accuracy, WPM, best combo
 
 ## How to Run
 
-No installs needed — just open `index.html` in any browser.
+No installs needed — just open any `.html` file in your browser (double-click it!).
+
+Use the nav bar at the top to switch between games.

@@ -18,8 +18,32 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
     }
+
+    /* ── Nav Bar ── */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 8px 22px;
+      border-radius: 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background 0.25s, transform 0.15s;
+      background: rgba(255,255,255,0.1);
+    }
+    .navbar a:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+    .navbar a.active { background: rgba(255,255,255,0.3); }
 
     h1 {
       color: white;
@@ -174,6 +198,11 @@
   </style>
 </head>
 <body>
+
+  <nav class="navbar">
+    <a href="index.html" class="active">Memory Match</a>
+    <a href="typerace.html">Typing Race</a>
+  </nav>
 
   <h1>Memory Match</h1>
 
