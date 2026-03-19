@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Brain, Trophy, Home } from "lucide-react";
+import { Brain, Trophy, Home, Divide } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -76,17 +76,26 @@ export default function Layout({ children, currentPageName }) {
           
           <div className="flex items-center gap-4">
             {currentPageName !== "Tutorial" && (
-              <Link 
-                to={createPageUrl("Tutorial")} 
+              <Link
+                to={createPageUrl("Tutorial")}
                 className="clay-button bg-gradient-to-r from-purple-200 to-blue-200 hover:from-purple-300 hover:to-blue-300 px-6 py-3 flex items-center gap-2 text-purple-700 font-medium"
               >
                 <Home className="w-4 h-4" />
                 Home
               </Link>
             )}
+            {currentPageName !== "DivisionGame" && (
+              <Link
+                to={createPageUrl("DivisionGame")}
+                className="clay-button bg-gradient-to-r from-orange-200 to-pink-200 hover:from-orange-300 hover:to-pink-300 px-6 py-3 flex items-center gap-2 text-orange-700 font-medium"
+              >
+                <Divide className="w-4 h-4" />
+                Division
+              </Link>
+            )}
             {currentPageName !== "Leaderboard" && (
-              <Link 
-                to={createPageUrl("Leaderboard")} 
+              <Link
+                to={createPageUrl("Leaderboard")}
                 className="clay-button bg-gradient-to-r from-yellow-200 to-orange-200 hover:from-yellow-300 hover:to-orange-300 px-6 py-3 flex items-center gap-2 text-orange-700 font-medium"
               >
                 <Trophy className="w-4 h-4" />
