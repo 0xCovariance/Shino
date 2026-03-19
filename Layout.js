@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Brain, Trophy, Home } from "lucide-react";
+import { Brain, Trophy, Home, Keyboard } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -84,9 +84,18 @@ export default function Layout({ children, currentPageName }) {
                 Home
               </Link>
             )}
+            {currentPageName !== "TypingRace" && (
+              <Link
+                to={createPageUrl("TypingRace")}
+                className="clay-button bg-gradient-to-r from-orange-200 to-red-200 hover:from-orange-300 hover:to-red-300 px-6 py-3 flex items-center gap-2 text-orange-700 font-medium"
+              >
+                <Keyboard className="w-4 h-4" />
+                Typing Race
+              </Link>
+            )}
             {currentPageName !== "Leaderboard" && (
-              <Link 
-                to={createPageUrl("Leaderboard")} 
+              <Link
+                to={createPageUrl("Leaderboard")}
                 className="clay-button bg-gradient-to-r from-yellow-200 to-orange-200 hover:from-yellow-300 hover:to-orange-300 px-6 py-3 flex items-center gap-2 text-orange-700 font-medium"
               >
                 <Trophy className="w-4 h-4" />
