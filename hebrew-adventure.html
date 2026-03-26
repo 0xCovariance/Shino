@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lost Letters of Jerusalem</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&family=Poppins:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #0a0a1a;
+    color: #e0d8c8;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .stars {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at center, #1a1a3e 0%, #0a0a1a 70%);
+    z-index: 0;
+  }
+  .stars::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.9) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 45%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.7) 0%, transparent 100%);
+  }
+
+  #app {
+    position: relative; z-index: 1;
+    max-width: 800px; margin: 0 auto; padding: 20px;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+
+  .hebrew { font-family: 'Noto Sans Hebrew', serif; direction: rtl; }
+
+  /* Title Screen */
+  #title-screen { text-align: center; animation: fadeIn 1s ease; }
+  #title-screen h1 {
+    font-size: 2.8em; margin-bottom: 10px;
+    background: linear-gradient(135deg, #f0c27f, #fc5c7d);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  #title-screen .subtitle { font-size: 1.1em; color: #a099b0; margin-bottom: 40px; }
+
+  .btn {
+    display: inline-block; padding: 14px 36px; border: none; border-radius: 12px;
+    font-family: 'Poppins', sans-serif; font-size: 1.1em; font-weight: 600;
+    cursor: pointer; transition: all 0.3s ease; color: white;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5); }
+  .btn:active { transform: translateY(0); }
+  .btn-small { padding: 10px 24px; font-size: 0.95em; }
+  .btn-gold {
+    background: linear-gradient(135deg, #f0c27f, #e8a435);
+    box-shadow: 0 4px 20px rgba(240, 194, 127, 0.3);
+  }
+  .btn-gold:hover { box-shadow: 0 6px 25px rgba(240, 194, 127, 0.5); }
+  .btn-green {
+    background: linear-gradient(135deg, #56ab2f, #a8e063);
+    box-shadow: 0 4px 20px rgba(86, 171, 47, 0.3);
+  }
+
+  /* Game area */
+  .game-container {
+    width: 100%; animation: fadeIn 0.5s ease;
+  }
+
+  .top-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 20px; margin-bottom: 20px;
+    background: rgba(255,255,255,0.05); border-radius: 12px;
+    backdrop-filter: blur(10px);
+  }
+  .top-bar .chapter { font-weight: 600; color: #f0c27f; }
+  .top-bar .xp { color: #a8e063; font-weight: 600; }
+  .top-bar .hearts { color: #fc5c7d; font-size: 1.2em; }
+
+  .story-box {
+    background: rgba(255,255,255,0.05); border-radius: 16px;
+    padding: 30px; margin-bottom: 24px; line-height: 1.8;
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+  }
+  .story-box .scene-icon { font-size: 2.5em; margin-bottom: 16px; display: block; }
+  .story-box p { margin-bottom: 12px; }
+  .story-box .narrator { color: #a099b0; font-style: italic; }
+  .story-box .npc-name { color: #f0c27f; font-weight: 700; }
+  .story-box .hebrew-highlight {
+    font-family: 'Noto Sans Hebrew', serif; font-size: 1.3em;
+    color: #88d8ff; display: inline; direction: rtl;
+  }
+  .story-box .teach-block {
+    background: rgba(102, 126, 234, 0.15); border-left: 3px solid #667eea;
+    padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 16px 0;
+  }
+  .story-box .teach-block .big-hebrew {
+    font-family: 'Noto Sans Hebrew', serif; font-size: 2.4em;
+    color: #88d8ff; direction: rtl; display: block; margin: 8px 0;
+  }
+  .story-box .teach-block .phonetic { color: #c9a0dc; font-style: italic; }
+  .story-box .teach-block .meaning { color: #a8e063; }
+
+  /* Challenge area */
+  .challenge-box {
+    background: rgba(252, 92, 125, 0.08); border-radius: 16px;
+    padding: 30px; margin-bottom: 24px;
+    border: 1px solid rgba(252, 92, 125, 0.15);
+  }
+  .challenge-box h3 { color: #fc5c7d; margin-bottom: 16px; font-size: 1.1em; }
+  .challenge-box .question { font-size: 1.15em; margin-bottom: 20px; }
+  .challenge-box .question .hebrew-big {
+    font-family: 'Noto Sans Hebrew', serif; font-size: 2em;
+    color: #88d8ff; direction: rtl;
+  }
+
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .option-btn {
+    padding: 14px 20px; border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px; background: rgba(255,255,255,0.04);
+    color: #e0d8c8; font-family: 'Poppins', sans-serif; font-size: 1em;
+    cursor: pointer; transition: all 0.3s ease; text-align: center;
+  }
+  .option-btn:hover { border-color: #667eea; background: rgba(102,126,234,0.1); }
+  .option-btn.correct {
+    border-color: #56ab2f; background: rgba(86,171,47,0.2);
+    animation: pulse-green 0.5s ease;
+  }
+  .option-btn.wrong {
+    border-color: #fc5c7d; background: rgba(252,92,125,0.2);
+    animation: shake 0.4s ease;
+  }
+  .option-btn .option-hebrew {
+    font-family: 'Noto Sans Hebrew', serif; direction: rtl; font-size: 1.2em;
+  }
+
+  .feedback-msg {
+    text-align: center; padding: 16px; border-radius: 12px; margin-top: 16px;
+    font-weight: 600; animation: fadeIn 0.3s ease;
+  }
+  .feedback-msg.correct { background: rgba(86,171,47,0.15); color: #a8e063; }
+  .feedback-msg.wrong { background: rgba(252,92,125,0.15); color: #fc5c7d; }
+
+  .continue-area { text-align: center; margin-top: 20px; }
+
+  /* Progress bar */
+  .progress-bar-container {
+    width: 100%; height: 6px; background: rgba(255,255,255,0.1);
+    border-radius: 3px; margin-bottom: 20px; overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 3px; transition: width 0.5s ease;
+  }
+
+  /* Word journal */
+  .journal-toggle {
+    position: fixed; bottom: 20px; right: 20px; z-index: 10;
+    width: 50px; height: 50px; border-radius: 50%;
+    background: linear-gradient(135deg, #f0c27f, #e8a435);
+    border: none; font-size: 1.4em; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(240,194,127,0.4);
+    transition: transform 0.3s ease;
+  }
+  .journal-toggle:hover { transform: scale(1.1); }
+
+  .journal-panel {
+    position: fixed; top: 0; right: -380px; width: 360px; height: 100%;
+    background: #14142e; border-left: 1px solid rgba(255,255,255,0.1);
+    z-index: 20; transition: right 0.3s ease; overflow-y: auto; padding: 24px;
+  }
+  .journal-panel.open { right: 0; }
+  .journal-panel h2 { color: #f0c27f; margin-bottom: 20px; }
+  .journal-close {
+    position: absolute; top: 16px; right: 16px; background: none;
+    border: none; color: #a099b0; font-size: 1.4em; cursor: pointer;
+  }
+  .journal-entry {
+    padding: 12px; margin-bottom: 10px;
+    background: rgba(255,255,255,0.04); border-radius: 10px;
+    border-left: 3px solid #667eea;
+  }
+  .journal-entry .j-hebrew {
+    font-family: 'Noto Sans Hebrew', serif; font-size: 1.5em;
+    color: #88d8ff; direction: rtl;
+  }
+  .journal-entry .j-phonetic { color: #c9a0dc; font-size: 0.9em; }
+  .journal-entry .j-meaning { color: #a8e063; }
+  .journal-entry .j-chapter { color: #a099b0; font-size: 0.8em; }
+  .journal-empty { color: #a099b0; font-style: italic; }
+
+  /* Chapter complete */
+  .chapter-complete {
+    text-align: center; animation: fadeIn 0.5s ease;
+  }
+  .chapter-complete .trophy { font-size: 4em; margin-bottom: 20px; }
+  .chapter-complete h2 {
+    font-size: 2em; margin-bottom: 10px;
+    background: linear-gradient(135deg, #f0c27f, #fc5c7d);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .chapter-complete .stats { color: #a099b0; margin-bottom: 10px; }
+  .chapter-complete .words-learned {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    margin: 24px 0;
+  }
+  .chapter-complete .word-badge {
+    background: rgba(102,126,234,0.15); border: 1px solid rgba(102,126,234,0.3);
+    border-radius: 10px; padding: 10px 16px; text-align: center;
+  }
+  .word-badge .wb-hebrew {
+    font-family: 'Noto Sans Hebrew', serif; font-size: 1.4em;
+    color: #88d8ff; direction: rtl; display: block;
+  }
+  .word-badge .wb-english { color: #a8e063; font-size: 0.85em; }
+
+  /* Game over */
+  .game-over { text-align: center; }
+  .game-over h2 { font-size: 2.5em; margin: 20px 0; color: #fc5c7d; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse-green { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  .hidden { display: none !important; }
+
+  /* Map screen */
+  .map-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .map-screen h2 { color: #f0c27f; font-size: 1.8em; margin-bottom: 24px; }
+  .map-locations { display: flex; flex-direction: column; gap: 16px; align-items: center; }
+  .map-loc {
+    width: 100%; max-width: 500px; padding: 20px; border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; gap: 16px; cursor: pointer;
+    transition: all 0.3s ease; text-align: left;
+  }
+  .map-loc:hover { border-color: #667eea; background: rgba(102,126,234,0.08); }
+  .map-loc.locked { opacity: 0.4; cursor: not-allowed; }
+  .map-loc.locked:hover { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); }
+  .map-loc.completed { border-color: rgba(86,171,47,0.4); }
+  .map-loc .loc-icon { font-size: 2.2em; }
+  .map-loc .loc-info h3 { font-size: 1.1em; color: #e0d8c8; }
+  .map-loc .loc-info p { font-size: 0.9em; color: #a099b0; }
+  .map-loc .loc-status { margin-left: auto; font-size: 1.3em; }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div id="app"></div>
+
+<button class="journal-toggle" onclick="toggleJournal()" title="Word Journal">📖</button>
+<div class="journal-panel" id="journal-panel">
+  <button class="journal-close" onclick="toggleJournal()">✕</button>
+  <h2>📖 Word Journal</h2>
+  <div id="journal-entries"></div>
+</div>
+
+<script>
+// ─── Game State ───
+const state = {
+  screen: 'title',
+  chapter: 0,
+  step: 0,
+  xp: 0,
+  hearts: 3,
+  maxHearts: 3,
+  journal: [],
+  chaptersCompleted: [],
+  challengeAnswered: false,
+};
+
+// ─── Story Content ───
+const chapters = [
+  {
+    id: 'market',
+    title: 'Chapter 1: The Old City Market',
+    icon: '🏛️',
+    location: 'The Shuk (Market)',
+    description: 'Learn greetings and the first Hebrew letters',
+    steps: [
+      {
+        type: 'story',
+        icon: '🌅',
+        text: `<p class="narrator">You arrive at the ancient gates of Jerusalem as the morning sun casts golden light across the stone walls. The sounds of a bustling market echo from within...</p>
+        <p>You step through the gate and find yourself in the <strong>Shuk</strong> — the old market. Stalls overflow with spices, fruits, and colorful fabrics. An old shopkeeper waves you over with a warm smile.</p>`
+      },
+      {
+        type: 'story',
+        icon: '👴',
+        text: `<p><span class="npc-name">Old Shopkeeper:</span> "Ah, a traveler! Welcome, welcome!"</p>
+        <p>He places his hand on his chest and says warmly:</p>
+        <div class="teach-block">
+          <span class="big-hebrew">שָׁלוֹם</span>
+          <span class="phonetic">"Shalom"</span> — <span class="meaning">Hello / Peace / Goodbye</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">The most important word in Hebrew — it means hello, goodbye, AND peace. You'll hear it everywhere!</p>
+        </div>
+        <p><span class="npc-name">Shopkeeper:</span> "In our language, we greet with peace itself. Can you say it back to me?"</p>`,
+        teaches: { hebrew: 'שָׁלוֹם', phonetic: 'Shalom', meaning: 'Hello / Peace / Goodbye' }
+      },
+      {
+        type: 'challenge',
+        question: 'The shopkeeper greeted you warmly. How do you greet him back?',
+        options: [
+          { text: 'שָׁלוֹם (Shalom)', correct: true },
+          { text: 'בוקר (Boker)', correct: false },
+          { text: 'מַיִם (Mayim)', correct: false },
+          { text: 'לַיְלָה (Layla)', correct: false },
+        ],
+        correctMsg: '"שָׁלוֹם!" The shopkeeper beams. "You\'re a natural! Peace be with you, friend."',
+        wrongMsg: 'The shopkeeper chuckles. "Not quite! Remember — שָׁלוֹם (Shalom) means hello, peace, and goodbye!"',
+      },
+      {
+        type: 'story',
+        icon: '✨',
+        text: `<p>The shopkeeper nods approvingly and gestures around his stall full of fresh fruits and warm bread.</p>
+        <p><span class="npc-name">Shopkeeper:</span> "Now, if someone does something nice for you, or gives you something, you say..."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">תּוֹדָה</span>
+          <span class="phonetic">"Todah"</span> — <span class="meaning">Thank you</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">One of the first words every visitor learns. To say "thank you very much," say <strong>תּוֹדָה רַבָּה</strong> (Todah Rabah)!</p>
+        </div>`,
+        teaches: { hebrew: 'תּוֹדָה', phonetic: 'Todah', meaning: 'Thank you' }
+      },
+      {
+        type: 'story',
+        icon: '🍎',
+        text: `<p>The shopkeeper hands you a beautiful red apple from his stall.</p>
+        <p><span class="npc-name">Shopkeeper:</span> "A gift for the traveler! This is called..."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">תַּפּוּחַ</span>
+          <span class="phonetic">"Tapuach"</span> — <span class="meaning">Apple</span>
+        </div>
+        <p>He smiles. "Now... what do you say when someone gives you a gift?"</p>`,
+        teaches: { hebrew: 'תַּפּוּחַ', phonetic: 'Tapuach', meaning: 'Apple' }
+      },
+      {
+        type: 'challenge',
+        question: 'The shopkeeper just gave you a gift! What do you say?',
+        options: [
+          { text: 'תּוֹדָה (Todah)', correct: true },
+          { text: 'שָׁלוֹם (Shalom)', correct: false },
+          { text: 'לֹא (Lo)', correct: false },
+          { text: 'מַה (Mah)', correct: false },
+        ],
+        correctMsg: '"תּוֹדָה!" The shopkeeper laughs joyfully. "You have a good heart, traveler!"',
+        wrongMsg: 'The shopkeeper gently reminds you: "When someone gives you something, say תּוֹדָה (Todah) — thank you!"',
+      },
+      {
+        type: 'story',
+        icon: '🔤',
+        text: `<p><span class="npc-name">Shopkeeper:</span> "Before you go deeper into the city, let me teach you the very first letter of our alphabet — the <strong>Alef-Bet</strong>."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">א</span>
+          <span class="phonetic">"Alef"</span> — <span class="meaning">The 1st letter (silent — takes the sound of its vowel)</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Alef is special — it's silent on its own. It's like a blank canvas that takes whatever vowel sound is paired with it.</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">ב</span>
+          <span class="phonetic">"Bet"</span> — <span class="meaning">The 2nd letter (sounds like "B")</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Bet makes a "B" sound. The word "Alef-Bet" (alphabet!) comes from these first two letters — just like Alpha-Beta in Greek!</p>
+        </div>`,
+        teaches: { hebrew: 'א ב', phonetic: 'Alef, Bet', meaning: 'First two Hebrew letters' }
+      },
+      {
+        type: 'challenge',
+        question: 'Which letter is the FIRST letter of the Hebrew alphabet?',
+        questionHebrew: 'א  or  ב ?',
+        options: [
+          { text: 'א (Alef)', correct: true },
+          { text: 'ב (Bet)', correct: false },
+          { text: 'ג (Gimel)', correct: false },
+          { text: 'ד (Dalet)', correct: false },
+        ],
+        correctMsg: 'That\'s right! א (Alef) is the first letter. The Hebrew "alphabet" is called the Alef-Bet!',
+        wrongMsg: 'Not quite! א (Alef) is the first letter, and ב (Bet) is the second — together they give us "Alef-Bet!"',
+      },
+    ]
+  },
+  {
+    id: 'kotel',
+    title: 'Chapter 2: The Western Wall',
+    icon: '🧱',
+    location: 'The Kotel (Western Wall)',
+    description: 'Learn numbers, yes/no, and more letters',
+    steps: [
+      {
+        type: 'story',
+        icon: '🧱',
+        text: `<p class="narrator">Following the shopkeeper's directions, you walk through narrow stone alleyways. The ancient walls seem to whisper with centuries of stories. Finally, the path opens up to reveal a vast plaza...</p>
+        <p>Before you stands the <strong>Kotel</strong> — the Western Wall. People from around the world stand here, some praying, some simply touching the ancient stones in silence. A young guide approaches you.</p>`
+      },
+      {
+        type: 'story',
+        icon: '🧑‍🏫',
+        text: `<p><span class="npc-name">Guide (Yael):</span> "שָׁלוֹם! I'm Yael. Would you like to learn a bit as we walk? First — the essentials: yes and no!"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">כֵּן</span>
+          <span class="phonetic">"Ken"</span> — <span class="meaning">Yes</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">לֹא</span>
+          <span class="phonetic">"Lo"</span> — <span class="meaning">No</span>
+        </div>
+        <p><span class="npc-name">Yael:</span> "Simple, right? כֵּן or לֹא — yes or no!"</p>`,
+        teaches: { hebrew: 'כֵּן / לֹא', phonetic: 'Ken / Lo', meaning: 'Yes / No' }
+      },
+      {
+        type: 'challenge',
+        question: 'Yael asks: "Do you want to learn Hebrew?" How do you say YES?',
+        options: [
+          { text: 'כֵּן (Ken)', correct: true },
+          { text: 'לֹא (Lo)', correct: false },
+          { text: 'תּוֹדָה (Todah)', correct: false },
+          { text: 'שָׁלוֹם (Shalom)', correct: false },
+        ],
+        correctMsg: '"כֵּן!" Yael grins. "That\'s the spirit! Let\'s keep going!"',
+        wrongMsg: 'Yael laughs: "כֵּן (Ken) means yes! I hope you want to keep learning!"',
+      },
+      {
+        type: 'story',
+        icon: '🔢',
+        text: `<p><span class="npc-name">Yael:</span> "Let me teach you to count to three in Hebrew. Ready?"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">אֶחָד</span>
+          <span class="phonetic">"Echad"</span> — <span class="meaning">One (1)</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">שְׁנַיִם</span>
+          <span class="phonetic">"Shnayim"</span> — <span class="meaning">Two (2)</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">שָׁלוֹשׁ</span>
+          <span class="phonetic">"Shalosh"</span> — <span class="meaning">Three (3)</span>
+        </div>
+        <p><span class="npc-name">Yael:</span> "אֶחָד, שְׁנַיִם, שָׁלוֹשׁ — one, two, three! Notice how שָׁלוֹשׁ (three) sounds a bit like שָׁלוֹם (peace)? Hebrew words from the same root often sound similar!"</p>`,
+        teaches: { hebrew: 'אֶחָד שְׁנַיִם שָׁלוֹשׁ', phonetic: 'Echad, Shnayim, Shalosh', meaning: '1, 2, 3' }
+      },
+      {
+        type: 'challenge',
+        question: 'How do you say the number TWO in Hebrew?',
+        options: [
+          { text: 'שְׁנַיִם (Shnayim)', correct: true },
+          { text: 'אֶחָד (Echad)', correct: false },
+          { text: 'שָׁלוֹשׁ (Shalosh)', correct: false },
+          { text: 'שָׁלוֹם (Shalom)', correct: false },
+        ],
+        correctMsg: 'Exactly! שְׁנַיִם (Shnayim) = Two. You\'re counting like a pro!',
+        wrongMsg: 'Not quite! אֶחָד = one, שְׁנַיִם = two, שָׁלוֹשׁ = three. Remember: Shnayim = 2!',
+      },
+      {
+        type: 'story',
+        icon: '🔤',
+        text: `<p><span class="npc-name">Yael:</span> "Two more letters for you! These are very common."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">ג</span>
+          <span class="phonetic">"Gimel"</span> — <span class="meaning">The 3rd letter (sounds like "G")</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">ד</span>
+          <span class="phonetic">"Dalet"</span> — <span class="meaning">The 4th letter (sounds like "D")</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Fun fact: "Dalet" comes from the word "door" (דֶּלֶת). The ancient form of this letter looked like a door!</p>
+        </div>`,
+        teaches: { hebrew: 'ג ד', phonetic: 'Gimel, Dalet', meaning: '3rd and 4th Hebrew letters' }
+      },
+      {
+        type: 'challenge',
+        question: 'Which Hebrew letter makes the "D" sound and means "door"?',
+        options: [
+          { text: 'ד (Dalet)', correct: true },
+          { text: 'ג (Gimel)', correct: false },
+          { text: 'ב (Bet)', correct: false },
+          { text: 'א (Alef)', correct: false },
+        ],
+        correctMsg: 'Right! ד (Dalet) = "D" sound, from the word for door! Your Alef-Bet knowledge is growing!',
+        wrongMsg: 'The answer is ד (Dalet)! It sounds like "D" and comes from the ancient word for "door" (דֶּלֶת).',
+      },
+    ]
+  },
+  {
+    id: 'cafe',
+    title: 'Chapter 3: The Hilltop Café',
+    icon: '☕',
+    location: 'The Café (בֵּית קָפֶה)',
+    description: 'Learn food, drink, and useful phrases',
+    steps: [
+      {
+        type: 'story',
+        icon: '☕',
+        text: `<p class="narrator">Yael leads you up winding stone steps to a rooftop café overlooking the golden skyline. The smell of fresh coffee and pastries fills the air...</p>
+        <p><span class="npc-name">Yael:</span> "After all that walking, let's sit and have something to eat! A café in Hebrew is..."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">בֵּית קָפֶה</span>
+          <span class="phonetic">"Beit Kafeh"</span> — <span class="meaning">Café (literally: "house of coffee")</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Hebrew is beautifully literal sometimes! "Beit" means house, "kafeh" means coffee. A café is a "house of coffee"!</p>
+        </div>`,
+        teaches: { hebrew: 'בֵּית קָפֶה', phonetic: 'Beit Kafeh', meaning: 'Café ("house of coffee")' }
+      },
+      {
+        type: 'story',
+        icon: '💧',
+        text: `<p>A waiter arrives at your table. Yael orders for both of you.</p>
+        <p><span class="npc-name">Yael:</span> "The most important thing to order here is..."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">מַיִם</span>
+          <span class="phonetic">"Mayim"</span> — <span class="meaning">Water</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">קָפֶה</span>
+          <span class="phonetic">"Kafeh"</span> — <span class="meaning">Coffee</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">לֶחֶם</span>
+          <span class="phonetic">"Lechem"</span> — <span class="meaning">Bread</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Bethlehem (בֵּית לֶחֶם) literally means "House of Bread!" Beit = house, Lechem = bread.</p>
+        </div>`,
+        teaches: { hebrew: 'מַיִם / קָפֶה / לֶחֶם', phonetic: 'Mayim, Kafeh, Lechem', meaning: 'Water, Coffee, Bread' }
+      },
+      {
+        type: 'challenge',
+        question: 'You\'re thirsty! Which Hebrew word means WATER?',
+        options: [
+          { text: 'מַיִם (Mayim)', correct: true },
+          { text: 'קָפֶה (Kafeh)', correct: false },
+          { text: 'לֶחֶם (Lechem)', correct: false },
+          { text: 'תַּפּוּחַ (Tapuach)', correct: false },
+        ],
+        correctMsg: 'מַיִם (Mayim) = Water! Fun fact: it\'s used in the famous song "Mayim Mayim"!',
+        wrongMsg: 'מַיִם (Mayim) means water! קָפֶה = coffee, לֶחֶם = bread.',
+      },
+      {
+        type: 'story',
+        icon: '🗣️',
+        text: `<p>As you eat, Yael teaches you some essential phrases for getting around.</p>
+        <p><span class="npc-name">Yael:</span> "If you need to ask something, start with..."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">סְלִיחָה</span>
+          <span class="phonetic">"Slicha"</span> — <span class="meaning">Excuse me / Sorry</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">בְּבַקָּשָׁה</span>
+          <span class="phonetic">"Bevakasha"</span> — <span class="meaning">Please / You're welcome</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Bevakasha does double duty — use it to say "please" when asking for something, AND "you're welcome" when someone thanks you!</p>
+        </div>`,
+        teaches: { hebrew: 'סְלִיחָה / בְּבַקָּשָׁה', phonetic: 'Slicha / Bevakasha', meaning: 'Excuse me / Please' }
+      },
+      {
+        type: 'challenge',
+        question: 'You bump into someone at the café. What do you say?',
+        options: [
+          { text: 'סְלִיחָה (Slicha)', correct: true },
+          { text: 'בְּבַקָּשָׁה (Bevakasha)', correct: false },
+          { text: 'תּוֹדָה (Todah)', correct: false },
+          { text: 'כֵּן (Ken)', correct: false },
+        ],
+        correctMsg: 'סְלִיחָה! Perfect — "excuse me / sorry." The locals are impressed!',
+        wrongMsg: 'You\'d say סְלִיחָה (Slicha) — it means "excuse me" or "sorry!"',
+      },
+      {
+        type: 'story',
+        icon: '🔤',
+        text: `<p><span class="npc-name">Yael:</span> "A few more letters before we go. These will help you start reading signs!"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">ה</span>
+          <span class="phonetic">"He"</span> — <span class="meaning">The 5th letter (sounds like "H")</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">When ה appears at the start of a word, it often means "the" — like "ha" in "HaKotel" (The Wall)!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">ו</span>
+          <span class="phonetic">"Vav"</span> — <span class="meaning">The 6th letter (sounds like "V" or "O" or "U")</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Vav is versatile — it can be a consonant "V" or act as a vowel making "O" or "U" sounds!</p>
+        </div>`,
+        teaches: { hebrew: 'ה ו', phonetic: 'He, Vav', meaning: '5th and 6th Hebrew letters' }
+      },
+      {
+        type: 'challenge',
+        question: 'Which Hebrew letter can act as BOTH a consonant AND a vowel?',
+        options: [
+          { text: 'ו (Vav)', correct: true },
+          { text: 'ה (He)', correct: false },
+          { text: 'א (Alef)', correct: false },
+          { text: 'ד (Dalet)', correct: false },
+        ],
+        correctMsg: 'Yes! ו (Vav) is a triple-threat — it can sound like "V", "O", or "U"! Very versatile.',
+        wrongMsg: 'It\'s ו (Vav)! This amazing letter can make a "V", "O", or "U" sound depending on context.',
+      },
+    ]
+  },
+  {
+    id: 'sunset',
+    title: 'Chapter 4: The Sunset Garden',
+    icon: '🌅',
+    location: 'Garden of Peace (גַּן הַשָּׁלוֹם)',
+    description: 'Learn colors, feelings, and say goodbye',
+    steps: [
+      {
+        type: 'story',
+        icon: '🌅',
+        text: `<p class="narrator">As the day grows late, Yael takes you to a beautiful garden overlooking the valleys. The sky is painted in shades of gold and crimson as the sun begins to set...</p>
+        <p><span class="npc-name">Yael:</span> "This is the גַּן הַשָּׁלוֹם — the Garden of Peace. What a perfect place to learn some colors!"</p>`
+      },
+      {
+        type: 'story',
+        icon: '🎨',
+        text: `<p>Yael points at the sky and the garden around you.</p>
+        <div class="teach-block">
+          <span class="big-hebrew">אָדוֹם</span>
+          <span class="phonetic">"Adom"</span> — <span class="meaning">Red</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">כָּחוֹל</span>
+          <span class="phonetic">"Kachol"</span> — <span class="meaning">Blue</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">The Israeli flag is לָבָן וְכָחוֹל (Lavan ve'Kachol) — white and blue!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">יָרוֹק</span>
+          <span class="phonetic">"Yarok"</span> — <span class="meaning">Green</span>
+        </div>`,
+        teaches: { hebrew: 'אָדוֹם / כָּחוֹל / יָרוֹק', phonetic: 'Adom, Kachol, Yarok', meaning: 'Red, Blue, Green' }
+      },
+      {
+        type: 'challenge',
+        question: 'The sky has a beautiful shade of blue. How do you say BLUE in Hebrew?',
+        options: [
+          { text: 'כָּחוֹל (Kachol)', correct: true },
+          { text: 'אָדוֹם (Adom)', correct: false },
+          { text: 'יָרוֹק (Yarok)', correct: false },
+          { text: 'לָבָן (Lavan)', correct: false },
+        ],
+        correctMsg: 'כָּחוֹל (Kachol) = Blue! Like the blue on the Israeli flag!',
+        wrongMsg: 'Blue is כָּחוֹל (Kachol)! אָדוֹם = red, יָרוֹק = green.',
+      },
+      {
+        type: 'story',
+        icon: '😊',
+        text: `<p><span class="npc-name">Yael:</span> "How are you feeling? Let me teach you how to ask and answer..."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">מַה שְׁלוֹמְךָ?</span>
+          <span class="phonetic">"Mah shlomcha?" (to a male) / "Mah shlomech?" (to a female)</span> — <span class="meaning">How are you?</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Literally: "What is your peace?" — Hebrew connects well-being with peace (shalom)!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">טוֹב</span>
+          <span class="phonetic">"Tov"</span> — <span class="meaning">Good</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">מְצוּיָן</span>
+          <span class="phonetic">"Metzuyan"</span> — <span class="meaning">Excellent / Great</span>
+        </div>`,
+        teaches: { hebrew: 'מַה שְׁלוֹמְךָ / טוֹב / מְצוּיָן', phonetic: 'Mah shlomcha, Tov, Metzuyan', meaning: 'How are you? / Good / Excellent' }
+      },
+      {
+        type: 'challenge',
+        question: 'Yael asks "מַה שְׁלוֹמְךָ?" — How are you? You feel great! What do you say?',
+        options: [
+          { text: 'מְצוּיָן (Metzuyan)', correct: true },
+          { text: 'סְלִיחָה (Slicha)', correct: false },
+          { text: 'לֹא (Lo)', correct: false },
+          { text: 'מַיִם (Mayim)', correct: false },
+        ],
+        correctMsg: '"מְצוּיָן!" Yael high-fives you. "Excellent indeed — your Hebrew is really coming along!"',
+        wrongMsg: 'To say "excellent" or "great," say מְצוּיָן (Metzuyan)! טוֹב (Tov) for just "good" works too!',
+      },
+      {
+        type: 'story',
+        icon: '🌙',
+        text: `<p class="narrator">The sun dips below the horizon and the first stars appear. It's time to say goodbye...</p>
+        <p><span class="npc-name">Yael:</span> "We already know שָׁלוֹם for goodbye, but here are some other ways..."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">לְהִתְרָאוֹת</span>
+          <span class="phonetic">"Lehitraot"</span> — <span class="meaning">See you later / Goodbye</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Literally means "until we see each other again." Much more personal than a simple goodbye!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">לַיְלָה טוֹב</span>
+          <span class="phonetic">"Layla Tov"</span> — <span class="meaning">Good night</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">לַיְלָה (Layla) = night, טוֹב (Tov) = good. Good night!</p>
+        </div>`,
+        teaches: { hebrew: 'לְהִתְרָאוֹת / לַיְלָה טוֹב', phonetic: 'Lehitraot / Layla Tov', meaning: 'See you later / Good night' }
+      },
+      {
+        type: 'challenge',
+        question: 'The stars are out. How do you say GOOD NIGHT to Yael?',
+        options: [
+          { text: 'לַיְלָה טוֹב (Layla Tov)', correct: true },
+          { text: 'לְהִתְרָאוֹת (Lehitraot)', correct: false },
+          { text: 'שָׁלוֹם (Shalom)', correct: false },
+          { text: 'תּוֹדָה (Todah)', correct: false },
+        ],
+        correctMsg: '"לַיְלָה טוֹב!" Yael smiles warmly. "Good night, my friend. You\'ve learned so much today!"',
+        wrongMsg: 'Good night = לַיְלָה טוֹב (Layla Tov)! Layla = night, Tov = good.',
+      },
+      {
+        type: 'story',
+        icon: '⭐',
+        text: `<p><span class="npc-name">Yael:</span> "What a beautiful evening! But our journey isn't over yet — tomorrow we explore more of this amazing city."</p>
+        <p style="text-align:center; margin-top:20px;"><span class="hebrew-highlight" style="font-size:1.5em;">לַיְלָה טוֹב!</span></p>
+        <p style="text-align:center; color:#c9a0dc;">"Good night — rest up for tomorrow!"</p>`,
+      },
+    ]
+  },
+  {
+    id: 'beach',
+    title: 'Chapter 5: The Beach at Tel Aviv',
+    icon: '🏖️',
+    location: 'Tel Aviv Beach (חוֹף תֵּל אָבִיב)',
+    description: 'Learn family, animals, and time of day',
+    steps: [
+      {
+        type: 'story',
+        icon: '🚌',
+        text: `<p class="narrator">The next morning, Yael surprises you with a trip to the coast. After a short bus ride, the sparkling Mediterranean Sea stretches out before you...</p>
+        <p><span class="npc-name">Yael:</span> "Welcome to Tel Aviv! The city that never sleeps. First, let me teach you about time of day — very useful!"</p>`
+      },
+      {
+        type: 'story',
+        icon: '🌞',
+        text: `<p><span class="npc-name">Yael:</span> "When you greet someone in the morning, you say..."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">בּוֹקֶר טוֹב</span>
+          <span class="phonetic">"Boker Tov"</span> — <span class="meaning">Good morning</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Boker = morning, Tov = good. Simple! The fun reply is "בּוֹקֶר אוֹר" (Boker Or) — "morning of light!"</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">צָהֳרַיִם טוֹבִים</span>
+          <span class="phonetic">"Tsohorayim Tovim"</span> — <span class="meaning">Good afternoon</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">עֶרֶב טוֹב</span>
+          <span class="phonetic">"Erev Tov"</span> — <span class="meaning">Good evening</span>
+        </div>`,
+        teaches: { hebrew: 'בּוֹקֶר טוֹב / עֶרֶב טוֹב', phonetic: 'Boker Tov, Erev Tov', meaning: 'Good morning / Good evening' }
+      },
+      {
+        type: 'challenge',
+        question: 'You arrive at the beach in the morning. How do you greet the lifeguard?',
+        options: [
+          { text: 'בּוֹקֶר טוֹב (Boker Tov)', correct: true },
+          { text: 'עֶרֶב טוֹב (Erev Tov)', correct: false },
+          { text: 'לַיְלָה טוֹב (Layla Tov)', correct: false },
+          { text: 'מַה שְׁלוֹמְךָ (Mah Shlomcha)', correct: false },
+        ],
+        correctMsg: '"בּוֹקֶר טוֹב!" The lifeguard smiles and replies "בּוֹקֶר אוֹר!" — morning of light!',
+        wrongMsg: 'In the morning you say בּוֹקֶר טוֹב (Boker Tov) — good morning! Boker = morning, Tov = good.',
+      },
+      {
+        type: 'story',
+        icon: '👨‍👩‍👧‍👦',
+        text: `<p>On the beach, you see families playing together. A little girl runs up with her dog.</p>
+        <p><span class="npc-name">Yael:</span> "Let me teach you some family words!"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">אִמָּא</span>
+          <span class="phonetic">"Ima"</span> — <span class="meaning">Mom</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">אַבָּא</span>
+          <span class="phonetic">"Abba"</span> — <span class="meaning">Dad</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">You might know "Abba" from the famous Swedish band — but it's actually a Hebrew word for dad!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">יֶלֶד / יַלְדָּה</span>
+          <span class="phonetic">"Yeled / Yalda"</span> — <span class="meaning">Boy / Girl</span>
+        </div>`,
+        teaches: { hebrew: 'אִמָּא / אַבָּא / יֶלֶד', phonetic: 'Ima, Abba, Yeled', meaning: 'Mom, Dad, Boy/Girl' }
+      },
+      {
+        type: 'challenge',
+        question: 'The little girl points at a man and says "That\'s my ____!" How do you say DAD?',
+        options: [
+          { text: 'אַבָּא (Abba)', correct: true },
+          { text: 'אִמָּא (Ima)', correct: false },
+          { text: 'יֶלֶד (Yeled)', correct: false },
+          { text: 'אֶחָד (Echad)', correct: false },
+        ],
+        correctMsg: 'אַבָּא (Abba) = Dad! The girl runs happily to her father.',
+        wrongMsg: 'Dad is אַבָּא (Abba)! אִמָּא (Ima) = Mom, יֶלֶד (Yeled) = Boy.',
+      },
+      {
+        type: 'story',
+        icon: '🐕',
+        text: `<p>The girl's dog comes bounding over, followed by a cat lounging on a nearby wall. Yael laughs.</p>
+        <p><span class="npc-name">Yael:</span> "Time for some animals!"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">כֶּלֶב</span>
+          <span class="phonetic">"Kelev"</span> — <span class="meaning">Dog</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">חָתוּל</span>
+          <span class="phonetic">"Chatul"</span> — <span class="meaning">Cat</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">צִפּוֹר</span>
+          <span class="phonetic">"Tzipor"</span> — <span class="meaning">Bird</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">The name "Tzipporah" (a biblical name) comes from this word — it means "bird!"</p>
+        </div>`,
+        teaches: { hebrew: 'כֶּלֶב / חָתוּל / צִפּוֹר', phonetic: 'Kelev, Chatul, Tzipor', meaning: 'Dog, Cat, Bird' }
+      },
+      {
+        type: 'challenge',
+        question: 'A cute furry animal purrs at your feet. What is a CAT in Hebrew?',
+        options: [
+          { text: 'חָתוּל (Chatul)', correct: true },
+          { text: 'כֶּלֶב (Kelev)', correct: false },
+          { text: 'צִפּוֹר (Tzipor)', correct: false },
+          { text: 'תַּפּוּחַ (Tapuach)', correct: false },
+        ],
+        correctMsg: 'חָתוּל (Chatul) = Cat! The chatul purrs happily as you pet it.',
+        wrongMsg: 'Cat = חָתוּל (Chatul)! כֶּלֶב = dog, צִפּוֹר = bird.',
+      },
+      {
+        type: 'story',
+        icon: '🔤',
+        text: `<p><span class="npc-name">Yael:</span> "You're getting so good at this! Two more letters — these have unique sounds."</p>
+        <div class="teach-block">
+          <span class="big-hebrew">ח</span>
+          <span class="phonetic">"Chet"</span> — <span class="meaning">The 8th letter (a throaty "Ch" sound)</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">This "Ch" is NOT like "ch" in "cheese" — it's a throaty sound, like clearing your throat gently. You just used it in חָתוּל (Chatul)!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">ט</span>
+          <span class="phonetic">"Tet"</span> — <span class="meaning">The 9th letter (sounds like "T")</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Tet appears in טוֹב (Tov = good) — a letter you've already been using!</p>
+        </div>`,
+        teaches: { hebrew: 'ח ט', phonetic: 'Chet, Tet', meaning: '8th and 9th Hebrew letters' }
+      },
+      {
+        type: 'challenge',
+        question: 'Which Hebrew letter makes a throaty "Ch" sound (like in חָתוּל)?',
+        options: [
+          { text: 'ח (Chet)', correct: true },
+          { text: 'ט (Tet)', correct: false },
+          { text: 'ה (He)', correct: false },
+          { text: 'כ (Kaf)', correct: false },
+        ],
+        correctMsg: 'Right! ח (Chet) makes that distinctive throaty "Ch" sound — one of the unique sounds of Hebrew!',
+        wrongMsg: 'The throaty "Ch" sound comes from ח (Chet)! You hear it in חָתוּל (cat) and חָבֵר (friend).',
+      },
+    ]
+  },
+  {
+    id: 'museum',
+    title: 'Chapter 6: The Ancient Museum',
+    icon: '🏛️',
+    location: 'Israel Museum (מוּזֵיאוֹן יִשְׂרָאֵל)',
+    description: 'Learn body parts, bigger numbers, and put it all together',
+    steps: [
+      {
+        type: 'story',
+        icon: '🏛️',
+        text: `<p class="narrator">On your final day, Yael takes you to the famous Israel Museum. Ancient scrolls, stunning art, and thousands of years of history surround you...</p>
+        <p><span class="npc-name">Yael:</span> "This is the perfect place for your final lesson. You've learned so much — now let's go even deeper!"</p>`
+      },
+      {
+        type: 'story',
+        icon: '🔢',
+        text: `<p>You pass a room with ancient number tablets. Yael continues your counting lesson.</p>
+        <p><span class="npc-name">Yael:</span> "You know 1-2-3, now let's go higher!"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">אַרְבַּע</span>
+          <span class="phonetic">"Arba"</span> — <span class="meaning">Four (4)</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">חָמֵשׁ</span>
+          <span class="phonetic">"Chamesh"</span> — <span class="meaning">Five (5)</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">The "Hamsa" (hand-shaped amulet) comes from the word חָמֵשׁ — because a hand has FIVE fingers!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">עֶשֶׂר</span>
+          <span class="phonetic">"Eser"</span> — <span class="meaning">Ten (10)</span>
+        </div>`,
+        teaches: { hebrew: 'אַרְבַּע / חָמֵשׁ / עֶשֶׂר', phonetic: 'Arba, Chamesh, Eser', meaning: '4, 5, 10' }
+      },
+      {
+        type: 'challenge',
+        question: 'The Hamsa amulet represents a hand with FIVE fingers. How do you say FIVE?',
+        options: [
+          { text: 'חָמֵשׁ (Chamesh)', correct: true },
+          { text: 'אַרְבַּע (Arba)', correct: false },
+          { text: 'עֶשֶׂר (Eser)', correct: false },
+          { text: 'שָׁלוֹשׁ (Shalosh)', correct: false },
+        ],
+        correctMsg: 'חָמֵשׁ (Chamesh) = Five! And that\'s where "Hamsa" comes from — the hand of five!',
+        wrongMsg: 'Five = חָמֵשׁ (Chamesh)! It\'s the root of "Hamsa" — the five-fingered hand amulet.',
+      },
+      {
+        type: 'story',
+        icon: '🧍',
+        text: `<p>You walk past ancient statues and Yael points at different body parts.</p>
+        <p><span class="npc-name">Yael:</span> "Let's learn some parts of the body — super useful!"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">רֹאשׁ</span>
+          <span class="phonetic">"Rosh"</span> — <span class="meaning">Head</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">"Rosh Hashana" — the Jewish New Year — literally means "Head of the Year!"</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">יָד</span>
+          <span class="phonetic">"Yad"</span> — <span class="meaning">Hand</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">A "yad" is also the pointer used to read the Torah scroll — shaped like a little hand!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">לֵב</span>
+          <span class="phonetic">"Lev"</span> — <span class="meaning">Heart</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Tel Aviv's full name is תֵּל אָבִיב. The name "Lev" is a popular first name meaning "heart."</p>
+        </div>`,
+        teaches: { hebrew: 'רֹאשׁ / יָד / לֵב', phonetic: 'Rosh, Yad, Lev', meaning: 'Head, Hand, Heart' }
+      },
+      {
+        type: 'challenge',
+        question: '"Rosh Hashana" means "Head of the Year." How do you say HEAD?',
+        options: [
+          { text: 'רֹאשׁ (Rosh)', correct: true },
+          { text: 'יָד (Yad)', correct: false },
+          { text: 'לֵב (Lev)', correct: false },
+          { text: 'טוֹב (Tov)', correct: false },
+        ],
+        correctMsg: 'רֹאשׁ (Rosh) = Head! Now "Rosh Hashana" makes perfect sense — the head (beginning) of the year!',
+        wrongMsg: 'Head = רֹאשׁ (Rosh)! That\'s why "Rosh Hashana" = Head of the Year (New Year).',
+      },
+      {
+        type: 'story',
+        icon: '💬',
+        text: `<p>Near the exit, Yael teaches you some final power phrases.</p>
+        <p><span class="npc-name">Yael:</span> "These will help you anywhere in Israel!"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">אֲנִי לֹא מֵבִין</span>
+          <span class="phonetic">"Ani lo mevin" (male) / "Ani lo mevina" (female)</span> — <span class="meaning">I don't understand</span>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">אֲנִי אוֹהֵב אֶת יִשְׂרָאֵל</span>
+          <span class="phonetic">"Ani ohev et Yisrael" (male) / "Ani ohevet" (female)</span> — <span class="meaning">I love Israel</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">אוֹהֵב/אוֹהֶבֶת (ohev/ohevet) means "love" — one of the most beautiful words in any language!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">חָבֵר / חָבֵרָה</span>
+          <span class="phonetic">"Chaver / Chavera"</span> — <span class="meaning">Friend (male / female)</span>
+        </div>`,
+        teaches: { hebrew: 'אֲנִי / אוֹהֵב / חָבֵר', phonetic: 'Ani, Ohev, Chaver', meaning: 'I / Love / Friend' }
+      },
+      {
+        type: 'challenge',
+        question: 'You want to tell Yael she\'s a great FRIEND. How do you say friend (female)?',
+        options: [
+          { text: 'חָבֵרָה (Chavera)', correct: true },
+          { text: 'חָבֵר (Chaver)', correct: false },
+          { text: 'אִמָּא (Ima)', correct: false },
+          { text: 'יַלְדָּה (Yalda)', correct: false },
+        ],
+        correctMsg: '"את חָבֵרָה מְצוּיֶנֶת!" — You\'re an excellent friend! Yael is touched.',
+        wrongMsg: 'A female friend is חָבֵרָה (Chavera)! חָבֵר (Chaver) is the male form.',
+      },
+      {
+        type: 'story',
+        icon: '🔤',
+        text: `<p><span class="npc-name">Yael:</span> "Your final letters! With these, you'll know the first 10 letters of the Alef-Bet!"</p>
+        <div class="teach-block">
+          <span class="big-hebrew">י</span>
+          <span class="phonetic">"Yod"</span> — <span class="meaning">The 10th letter (sounds like "Y")</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Yod is the smallest letter in the Hebrew alphabet — but it appears in the most important words, including God's name!</p>
+        </div>
+        <div class="teach-block">
+          <span class="big-hebrew">כ</span>
+          <span class="phonetic">"Kaf"</span> — <span class="meaning">The 11th letter (sounds like "K" or "Ch")</span>
+          <p style="margin-top:8px; color:#a099b0; font-size:0.9em;">Kaf means "palm of the hand" — and the letter's shape looks like a cupped palm!</p>
+        </div>
+        <p style="margin-top:16px; color:#a099b0;">You now know: א ב ג ד ה ו ח ט י כ — the foundations of the Alef-Bet!</p>`,
+        teaches: { hebrew: 'י כ', phonetic: 'Yod, Kaf', meaning: '10th and 11th Hebrew letters' }
+      },
+      {
+        type: 'challenge',
+        question: 'Which is the SMALLEST letter in the Hebrew alphabet?',
+        options: [
+          { text: 'י (Yod)', correct: true },
+          { text: 'כ (Kaf)', correct: false },
+          { text: 'א (Alef)', correct: false },
+          { text: 'ו (Vav)', correct: false },
+        ],
+        correctMsg: 'י (Yod) — the tiniest letter, but one of the most important! Small but mighty.',
+        wrongMsg: 'The smallest letter is י (Yod)! Despite its size, it\'s one of the most common letters in Hebrew.',
+      },
+      {
+        type: 'story',
+        icon: '🌟',
+        text: `<p class="narrator">You stand at the museum's rooftop terrace, the golden city stretching before you one last time. Yael turns to you with shining eyes.</p>
+        <p><span class="npc-name">Yael:</span> "Do you realize what you've done? You can greet people, say thank you and please, count to ten, name colors, order food, talk about family and animals, describe how you feel, and read 10 Hebrew letters!"</p>
+        <p>"You came here as a stranger, and you're leaving as a חָבֵר — a friend. Hebrew isn't just a language, it's a doorway into a world thousands of years old."</p>
+        <p style="text-align:center; margin-top:24px;"><span class="hebrew-highlight" style="font-size:2em;">!לְהִתְרָאוֹת, חָבֵר</span></p>
+        <p style="text-align:center; color:#c9a0dc; font-size:1.1em;">"See you again, friend!"</p>
+        <p style="text-align:center; color:#a099b0; margin-top:12px;">🇮🇱 Your Hebrew adventure is complete — but the journey never truly ends.</p>`,
+      },
+    ]
+  },
+];
+
+// ─── Render Engine ───
+function render() {
+  const app = document.getElementById('app');
+
+  if (state.screen === 'title') {
+    app.innerHTML = `
+      <div id="title-screen">
+        <div style="font-size:4em; margin-bottom:20px;">🏛️✨</div>
+        <h1>The Lost Letters<br>of Jerusalem</h1>
+        <p class="subtitle">A Hebrew Learning Adventure</p>
+        <p style="color:#a099b0; max-width:450px; margin:0 auto 30px; line-height:1.7;">
+          Journey through the ancient city, meet colorful characters, and learn Hebrew words, phrases, and letters along the way.
+        </p>
+        <button class="btn" onclick="startGame()">Begin Your Journey</button>
+        <p style="color:#665f70; margin-top:20px; font-size:0.85em;">📖 Tap the book icon anytime to review words you've learned</p>
+      </div>`;
+    return;
+  }
+
+  if (state.screen === 'map') {
+    renderMap(app);
+    return;
+  }
+
+  if (state.screen === 'chapter-complete') {
+    renderChapterComplete(app);
+    return;
+  }
+
+  if (state.screen === 'game-over') {
+    app.innerHTML = `
+      <div class="game-over">
+        <div style="font-size:4em;">💔</div>
+        <h2>Journey Paused</h2>
+        <p style="color:#a099b0; margin-bottom:10px;">You've run out of hearts, but don't worry — every great learner stumbles!</p>
+        <p style="color:#a099b0; margin-bottom:30px;">You learned <strong style="color:#a8e063;">${state.journal.length} words</strong> on your journey.</p>
+        <button class="btn" onclick="restartGame()">Try Again</button>
+      </div>`;
+    return;
+  }
+
+  if (state.screen === 'victory') {
+    app.innerHTML = `
+      <div class="chapter-complete">
+        <div class="trophy">🎓🌟</div>
+        <h2>Journey Complete!</h2>
+        <p style="color:#a099b0; margin-bottom:5px;">You've explored all of Jerusalem and learned <strong style="color:#a8e063;">${state.journal.length} Hebrew words & phrases!</strong></p>
+        <p style="color:#a099b0; margin-bottom:5px;">Total XP: <strong style="color:#f0c27f;">${state.xp}</strong></p>
+        <p style="color:#a099b0; margin-bottom:24px;">Hearts remaining: <span style="color:#fc5c7d;">${'❤️'.repeat(state.hearts)}</span></p>
+        <div class="words-learned">
+          ${state.journal.map(w => `
+            <div class="word-badge">
+              <span class="wb-hebrew">${w.hebrew}</span>
+              <span class="wb-english">${w.meaning}</span>
+            </div>
+          `).join('')}
+        </div>
+        <p style="color:#c9a0dc; font-size:1.2em; margin:20px 0; font-style:italic;">
+          "לְהִתְרָאוֹת — See you on your next adventure!"
+        </p>
+        <button class="btn" onclick="restartGame()" style="margin-top:10px;">Play Again</button>
+      </div>`;
+    return;
+  }
+
+  // Playing a chapter
+  if (state.screen === 'playing') {
+    renderPlaying(app);
+  }
+}
+
+function renderMap(app) {
+  let locationsHTML = chapters.map((ch, i) => {
+    const completed = state.chaptersCompleted.includes(i);
+    const unlocked = i === 0 || state.chaptersCompleted.includes(i - 1);
+    const current = unlocked && !completed;
+    let statusIcon = completed ? '✅' : (unlocked ? '➡️' : '🔒');
+    let classes = 'map-loc' + (completed ? ' completed' : '') + (!unlocked ? ' locked' : '');
+
+    return `<div class="${classes}" onclick="${unlocked && !completed ? `selectChapter(${i})` : (completed ? `selectChapter(${i})` : '')}">
+      <div class="loc-icon">${ch.icon}</div>
+      <div class="loc-info">
+        <h3>${ch.location}</h3>
+        <p>${ch.description}</p>
+      </div>
+      <div class="loc-status">${statusIcon}</div>
+    </div>`;
+  }).join('');
+
+  const allDone = chapters.every((_, i) => state.chaptersCompleted.includes(i));
+
+  app.innerHTML = `
+    <div class="map-screen">
+      <div style="font-size:2em; margin-bottom:10px;">🗺️</div>
+      <h2>Your Journey Through Jerusalem</h2>
+      <p style="color:#a099b0; margin-bottom:24px;">XP: <strong style="color:#f0c27f;">${state.xp}</strong> | Hearts: <span style="color:#fc5c7d;">${'❤️'.repeat(state.hearts)}${'🖤'.repeat(state.maxHearts - state.hearts)}</span> | Words: <strong style="color:#a8e063;">${state.journal.length}</strong></p>
+      <div class="map-locations">${locationsHTML}</div>
+      ${allDone ? `<button class="btn btn-gold" style="margin-top:30px;" onclick="showVictory()">Complete Your Journey ⭐</button>` : ''}
+    </div>`;
+}
+
+function renderChapterComplete(app) {
+  const ch = chapters[state.chapter];
+  const wordsThisChapter = state.journal.filter(w => w.chapter === ch.id);
+
+  app.innerHTML = `
+    <div class="chapter-complete">
+      <div class="trophy">🏆</div>
+      <h2>${ch.title} Complete!</h2>
+      <p class="stats">+${wordsThisChapter.length * 10} XP earned</p>
+      <p style="color:#a099b0; margin-bottom:8px;">Words & phrases learned:</p>
+      <div class="words-learned">
+        ${wordsThisChapter.map(w => `
+          <div class="word-badge">
+            <span class="wb-hebrew">${w.hebrew}</span>
+            <span class="wb-english">${w.meaning}</span>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn btn-gold" onclick="returnToMap()" style="margin-top:10px;">Return to Map 🗺️</button>
+    </div>`;
+}
+
+function renderPlaying(app) {
+  const ch = chapters[state.chapter];
+  const step = ch.steps[state.step];
+  const progress = ((state.step + 1) / ch.steps.length) * 100;
+
+  let contentHTML = '';
+
+  if (step.type === 'story') {
+    contentHTML = `
+      <div class="story-box">
+        <span class="scene-icon">${step.icon || '📜'}</span>
+        ${step.text}
+      </div>
+      <div class="continue-area">
+        <button class="btn" onclick="nextStep()">Continue →</button>
+      </div>`;
+  } else if (step.type === 'challenge') {
+    const optionsHTML = step.options.map((opt, i) => {
+      let cls = 'option-btn';
+      if (state.challengeAnswered) {
+        if (opt.correct) cls += ' correct';
+        else if (state.chosenOption === i && !opt.correct) cls += ' wrong';
+      }
+      return `<button class="${cls}" onclick="answerChallenge(${i})" ${state.challengeAnswered ? 'disabled' : ''}>
+        ${opt.text}
+      </button>`;
+    }).join('');
+
+    let feedbackHTML = '';
+    if (state.challengeAnswered) {
+      const wasCorrect = step.options[state.chosenOption].correct;
+      feedbackHTML = `
+        <div class="feedback-msg ${wasCorrect ? 'correct' : 'wrong'}">
+          ${wasCorrect ? '✨ ' + step.correctMsg : '💡 ' + step.wrongMsg}
+        </div>
+        <div class="continue-area">
+          <button class="btn ${wasCorrect ? 'btn-green' : ''}" onclick="nextStep()">Continue →</button>
+        </div>`;
+    }
+
+    contentHTML = `
+      <div class="challenge-box">
+        <h3>⚔️ Challenge</h3>
+        <div class="question">
+          ${step.question}
+          ${step.questionHebrew ? `<div class="hebrew-big">${step.questionHebrew}</div>` : ''}
+        </div>
+        <div class="options">${optionsHTML}</div>
+        ${feedbackHTML}
+      </div>`;
+  }
+
+  app.innerHTML = `
+    <div class="game-container">
+      <div class="top-bar">
+        <span class="chapter">${ch.icon} ${ch.location}</span>
+        <span class="xp">⭐ ${state.xp} XP</span>
+        <span class="hearts">${'❤️'.repeat(state.hearts)}${'🖤'.repeat(state.maxHearts - state.hearts)}</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" style="width: ${progress}%"></div>
+      </div>
+      ${contentHTML}
+    </div>`;
+}
+
+// ─── Game Logic ───
+function startGame() {
+  state.screen = 'map';
+  render();
+}
+
+function selectChapter(index) {
+  state.chapter = index;
+  state.step = 0;
+  state.screen = 'playing';
+  state.challengeAnswered = false;
+  render();
+}
+
+function nextStep() {
+  const ch = chapters[state.chapter];
+
+  // Add word to journal if step teaches something
+  const currentStep = ch.steps[state.step];
+  if (currentStep.teaches) {
+    const already = state.journal.find(w => w.hebrew === currentStep.teaches.hebrew);
+    if (!already) {
+      state.journal.push({ ...currentStep.teaches, chapter: ch.id });
+      updateJournal();
+    }
+  }
+
+  state.step++;
+  state.challengeAnswered = false;
+
+  if (state.step >= ch.steps.length) {
+    // Chapter complete
+    if (!state.chaptersCompleted.includes(state.chapter)) {
+      state.chaptersCompleted.push(state.chapter);
+    }
+    state.screen = 'chapter-complete';
+  }
+
+  render();
+}
+
+function answerChallenge(optionIndex) {
+  if (state.challengeAnswered) return;
+
+  const ch = chapters[state.chapter];
+  const step = ch.steps[state.step];
+  const correct = step.options[optionIndex].correct;
+
+  state.challengeAnswered = true;
+  state.chosenOption = optionIndex;
+
+  if (correct) {
+    state.xp += 10;
+  } else {
+    state.hearts--;
+    if (state.hearts <= 0) {
+      state.screen = 'game-over';
+    }
+  }
+
+  render();
+}
+
+function returnToMap() {
+  state.screen = 'map';
+  render();
+}
+
+function showVictory() {
+  state.screen = 'victory';
+  render();
+}
+
+function restartGame() {
+  state.screen = 'title';
+  state.chapter = 0;
+  state.step = 0;
+  state.xp = 0;
+  state.hearts = 3;
+  state.journal = [];
+  state.chaptersCompleted = [];
+  state.challengeAnswered = false;
+  render();
+}
+
+// ─── Journal ───
+function toggleJournal() {
+  document.getElementById('journal-panel').classList.toggle('open');
+}
+
+function updateJournal() {
+  const el = document.getElementById('journal-entries');
+  if (state.journal.length === 0) {
+    el.innerHTML = '<p class="journal-empty">Words you learn will appear here...</p>';
+    return;
+  }
+  el.innerHTML = state.journal.map(w => `
+    <div class="journal-entry">
+      <div class="j-hebrew">${w.hebrew}</div>
+      <div class="j-phonetic">${w.phonetic}</div>
+      <div class="j-meaning">${w.meaning}</div>
+    </div>
+  `).join('');
+}
+
+// ─── Init ───
+updateJournal();
+render();
+</script>
+</body>
+</html>
