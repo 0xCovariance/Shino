@@ -159,8 +159,11 @@
 const WORLD = 58;         // half-size of playable area (radius-ish)
 const CLEARING = 10;      // clear radius around the home campfire
 const MOVE_SPEED = 11;    // units / second
-const FRIEND_COUNT = 3;
-const FRIEND_NAMES = ["Shir", "Ben", "Maya"];
+const MAX_KIDS = 6;                 // total kids you can save (2 more per fire level)
+const KIDS_PER_LEVEL = 2;           // kids that appear at each fire level
+const SAFE_RADIUS = [12, 17, 23];   // glowing safe border by fire level 1,2,3
+const FRIEND_NAMES  = ["Shir", "Ben", "Maya", "Adam", "Lia", "Omri"];
+const FRIEND_COLORS = [0x8a5cff, 0x2ec5b6, 0xff5c9d, 0xffd23f, 0x4facfe, 0xa8e063];
 
 const FIRE_DRAIN_DAY = 0.9, FIRE_DRAIN_NIGHT = 1.6;   // per second (gentler)
 const HUNGER_DRAIN = 0.4, THIRST_DRAIN = 0.45;
@@ -174,6 +177,7 @@ const PICKUP_DIST = 2.2, FIRE_DIST = 5.5, FRIEND_DIST = 2.8, BEAR_HIT_DIST = 2.0
 /* ---------------- Three.js globals ---------------- */
 let scene, camera, renderer, clock;
 let ground, campfire, fireLight, flameMeshes = [], playerLight, flashlight;
+let safeRing, safeDisc;    // the glowing safe border around the fire
 let player, playerLegs = [];
 let sun, hemi;
 let trees = [];             // {x,z}
@@ -195,7 +199,7 @@ function newState() {
     fireLevel: 1, woodBurned: 0,
     wood: 3, food: 1, water: 1,
     tools: { rope:false, map:false, flashlight:false, axe:false, sack:false, spear:false },
-    saved: 0, following: [],
+    saved: 0, following: [], spawnedKids: 0, safeRadius: SAFE_RADIUS[0],
     tod: 0.12,          // time of day 0..1 (0=sunrise, .25 noon, .5 sunset, .75 midnight)
     day: 1, night: false,
     bearCd: 0, hurtFlash: 0,
@@ -252,7 +256,7 @@ function buildWorld() {
   buildTrees();
   buildCampfire();
   buildPlayer();
-  buildFriends();
+  spawnInitialFriends();
   buildBears();
   spawnResources(16);
 
@@ -334,6 +338,16 @@ function buildCampfire() {
   fireLight.position.set(0, 2, 0);
   campfire.add(fireLight);
   scene.add(campfire);
+
+  // ---- Safe border (grows with each fire upgrade) ----
+  // warm glow on the ground so the safe area reads clearly
+  safeDisc = new THREE.Mesh(new THREE.CircleGeometry(1, 64),
+    new THREE.MeshBasicMaterial({ color: 0xffb45a, transparent:true, opacity:0.14, side:THREE.DoubleSide, depthWrite:false }));
+  safeDisc.rotation.x = -Math.PI/2; safeDisc.position.y = 0.04; scene.add(safeDisc);
+  // a glowing "wall of warm light" fence around the camp — clearly visible and grows with upgrades
+  safeRing = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 3.6, 72, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xffe27a, transparent:true, opacity:0.34, side:THREE.DoubleSide, depthWrite:false }));
+  safeRing.position.y = 1.7; scene.add(safeRing);
 }
 
 function buildKid(colorBody, colorHead) {
@@ -374,28 +388,30 @@ function buildPlayer() {
   flashlight.target = tgt; player.add(flashlight);
 }
 
-function buildFriends() {
-  const palette = [0x8a5cff, 0x2ec5b6, 0xff5c9d];
-  for (let i=0;i<FRIEND_COUNT;i++){
-    let x, z, tries=0;
-    do { const a=rand(0,6.28), r=rand(24, WORLD-4); x=Math.cos(a)*r; z=Math.sin(a)*r; tries++; }
-    while (tries<50 && friends.some(f=>dist2(x,z,f.x,f.z)<120));
-    const kid = buildKid(palette[i], 0xffcc9c);
-    kid.group.position.set(x, 0, z);
-    scene.add(kid.group);
-    // beacon of light
-    const beam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.35, 40, 8, 1, true),
-      new THREE.MeshBasicMaterial({ color: palette[i], transparent:true, opacity:0.28, side:THREE.DoubleSide }));
-    beam.position.set(x, 20, z); scene.add(beam);
-    // "cage" of vines (simple bars)
-    const cage = new THREE.Group();
-    for (let b=0;b<5;b++){ const a=b/5*Math.PI*2; const bar=new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08,0.08,2.6,5), new THREE.MeshLambertMaterial({color:0x3c6b2f}));
-      bar.position.set(Math.cos(a)*0.9, 1.3, Math.sin(a)*0.9); cage.add(bar); }
-    cage.position.set(x,0,z); scene.add(cage);
-    friends.push({ group: kid.group, legs: kid.legs, beam, cage, name: FRIEND_NAMES[i], state:'trapped', x, z });
-  }
+function spawnFriend(i) {
+  const color = FRIEND_COLORS[i % FRIEND_COLORS.length];
+  const targetSafe = SAFE_RADIUS[G.fireLevel-1] || SAFE_RADIUS[0];
+  let x, z, tries=0;
+  do { const a=rand(0,6.28), r=rand(targetSafe+8, WORLD-4); x=Math.cos(a)*r; z=Math.sin(a)*r; tries++; }
+  while (tries<60 && friends.some(f=>dist2(x,z,f.x,f.z)<120));
+  const kid = buildKid(color, 0xffcc9c);
+  kid.group.position.set(x, 0, z); scene.add(kid.group);
+  // beacon of light so you can spot them from far away
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.35, 0.35, 40, 8, 1, true),
+    new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.28, side:THREE.DoubleSide }));
+  beam.position.set(x, 20, z); scene.add(beam);
+  // "cage" of vines
+  const cage = new THREE.Group();
+  for (let b=0;b<5;b++){ const a=b/5*Math.PI*2; const bar=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08,0.08,2.6,5), new THREE.MeshLambertMaterial({color:0x3c6b2f}));
+    bar.position.set(Math.cos(a)*0.9, 1.3, Math.sin(a)*0.9); cage.add(bar); }
+  cage.position.set(x,0,z); scene.add(cage);
+  friends.push({ group: kid.group, legs: kid.legs, beam, cage, name: FRIEND_NAMES[i % FRIEND_NAMES.length], state:'trapped', x, z });
+}
+function spawnInitialFriends() {
+  for (let i=0;i<KIDS_PER_LEVEL;i++) spawnFriend(i);
+  G.spawnedKids = KIDS_PER_LEVEL;
 }
 
 function buildBears() {
@@ -520,6 +536,16 @@ function animateAmbient(t) {
   if (fireLight) { fireLight.intensity = (G && !G.night ? 2.0 : 2.8) * fl * grow; fireLight.distance = 34 + (lvl-1)*10; }
   flameMeshes.forEach((f,i)=>{ f.scale.y = (0.8 + Math.sin(t*(9+i*2))*0.22)*grow; f.scale.x = (0.9+Math.sin(t*8+i)*0.1)*grow; });
   friends.forEach(f => { if (f.state==='trapped'){ f.beam.material.opacity = 0.2 + Math.sin(t*2+f.x)*0.1; } });
+  // grow the glowing safe border smoothly toward the current fire level's size
+  if (G && safeRing) {
+    const target = SAFE_RADIUS[lvl-1] || SAFE_RADIUS[0];
+    G.safeRadius += (target - G.safeRadius) * 0.06;
+    const pulse = 1 + Math.sin(t*2)*0.015;
+    const r = G.safeRadius * pulse;
+    safeRing.scale.set(r, 1, r);                 // vertical light-wall at the border radius
+    safeDisc.scale.set(G.safeRadius, G.safeRadius, 1);
+    safeRing.material.opacity = 0.32 + Math.sin(t*2)*0.1;
+  }
 }
 
 function updatePlayer(dt, t) {
@@ -593,10 +619,15 @@ function freeFriend(f) {
 }
 function saveFriend(f) {
   f.state='saved'; G.following.splice(G.following.indexOf(f),1); G.saved++;
-  f.group.position.set(rand(-3,3), 0, rand(2,4)); // sit by fire
-  toast("🎉 "+f.name+" is safe! ("+G.saved+"/"+FRIEND_COUNT+")", 'good');
+  // sit safely by the fire (spread around inside the safe border)
+  const a=rand(0,6.28), r=rand(2.5, 5.5); f.group.position.set(Math.cos(a)*r, 0, Math.sin(a)*r);
+  toast("🎉 "+f.name+" is safe! ("+G.saved+"/"+MAX_KIDS+")", 'good');
   updateHUD();
-  if (G.saved>=FRIEND_COUNT) endGame(true);
+  if (G.saved >= MAX_KIDS) { endGame(true); return; }
+  // caught up to everyone available? nudge the player to grow the fire for more kids
+  if (G.saved >= G.spawnedKids && G.spawnedKids < MAX_KIDS) {
+    setTimeout(()=>{ if (G && G.phase==='playing') toast("✨ Feed your fire more 🔥 to grow the border and find more kids to save!", 'big'); }, 1400);
+  }
 }
 
 function updateBears(dt) {
@@ -606,10 +637,12 @@ function updateBears(dt) {
     let tx=b.tx, tz=b.tz;
     if (dToPlayer < 13) { tx=player.position.x; tz=player.position.z; }   // chase
     else if (b.retarget<=0){ const a=rand(0,6.28),r=rand(15,WORLD-6); b.tx=Math.cos(a)*r; b.tz=Math.sin(a)*r; b.retarget=rand(3,7); tx=b.tx; tz=b.tz; }
-    // bears avoid the campfire
-    const dFire = Math.hypot(b.x,b.z);
-    let ax=tx-b.x, az=tz-b.z; const al=Math.hypot(ax,az)||1; ax/=al; az/=al;
-    if (dFire < 11 && !G.night){ ax += b.x/dFire*1.2; az += b.z/dFire*1.2; const l2=Math.hypot(ax,az)||1; ax/=l2; az/=l2; }
+    // the glowing safe border keeps bears out — they flee if they get too close to the fire
+    const dFire = Math.hypot(b.x,b.z) || 0.001;
+    const safe = G.safeRadius || SAFE_RADIUS[0];
+    let ax, az;
+    if (dFire < safe + 2.5) { ax = b.x/dFire; az = b.z/dFire; }   // pushed out of the safe zone
+    else { ax = tx-b.x; az = tz-b.z; const al=Math.hypot(ax,az)||1; ax/=al; az/=al; }
     const sp = (dToPlayer<13? b.speed*1.15 : b.speed*0.6);
     b.x += ax*sp*dt; b.z += az*sp*dt;
     b.group.position.set(b.x,0,b.z); b.group.rotation.y = Math.atan2(ax,az);
@@ -690,8 +723,13 @@ function doFeedFire() {
   // Feeding lots of wood upgrades your campfire, so fire, food & water drain slower.
   const newLevel = G.woodBurned >= FIRE_UP_3 ? 3 : G.woodBurned >= FIRE_UP_2 ? 2 : 1;
   if (newLevel > G.fireLevel) {
-    G.fireLevel = newLevel;
-    toast("🔥✨ Your campfire grew BIGGER! (Level "+newLevel+") Fire, food & water last longer now!", 'big');
+    G.fireLevel = newLevel;   // safe border grows automatically (lerps toward SAFE_RADIUS[level])
+    // more trapped kids appear that your bigger fire can now shelter
+    let added = 0;
+    const want = Math.min(newLevel * KIDS_PER_LEVEL, MAX_KIDS);
+    while (G.spawnedKids < want) { spawnFriend(G.spawnedKids); G.spawnedKids++; added++; }
+    toast("🔥✨ Campfire is now LEVEL "+newLevel+"! Bigger safe border, slower drains"
+      + (added ? ", and "+added+" more kid"+(added>1?"s":"")+" appeared to save! 🆘" : "!"), 'big');
   } else {
     toast("🔥 You fed the fire — warm and bright!", 'good');
   }
@@ -747,7 +785,7 @@ function updateHUD() {
   el('food-label').textContent = 'Food ' + Math.round(G.hunger);
   el('water-label').textContent = 'Water ' + Math.round(G.thirst);
   el('pack-chip').textContent = `🎒 ${carried()}/${carryMax()} · 🪵${G.wood} 🍎${G.food} 💧${G.water}`;
-  el('friends-chip').textContent = `🦸 ${G.saved} / ${FRIEND_COUNT} saved`;
+  el('friends-chip').textContent = `🦸 ${G.saved}/${G.spawnedKids} saved` + (G.spawnedKids<MAX_KIDS ? ` · 🔥+ for more (${MAX_KIDS})` : '');
   el('time-chip').textContent = (G.night?'🌙 Night':'☀️ Day ') + (G.night?'':G.day);
   el('fire-btn').style.display = G.nearFire ? '' : 'none';
   el('craft-btn').style.display = G.nearFire ? '' : 'none';
@@ -812,7 +850,8 @@ function showHowTo() {
       <li>🛠️ At the campfire, tap <b>Craft</b>. Build a 🪢 <b>Rope</b> — you need it to free friends!</li>
       <li>🗺️🔦 A <b>Map</b> shows an arrow to your friends. A <b>Flashlight</b> lights up the night.</li>
       <li>🐻 Watch out for <b>bears</b>! Craft a 🗡️ Spear to scare them, or just run.</li>
-      <li>🦸 Reach a glowing friend, free them, and lead them <b>back to the fire</b>. Save all 3 to win! 🎉</li>
+      <li>🔥✨ Feed the fire <b>more than 3 wood</b> and it upgrades: the glowing <b>safe border</b> grows (bears can't enter!), drains slow down, and <b>more kids appear</b> to rescue.</li>
+      <li>🦸 Reach a glowing friend, free them, and lead them <b>back to the fire</b>. Grow your fire and save all <b>6 kids</b> to win! 🎉</li>
     </ul>
     <button class="btn btn-amber" onclick="startGame()">▶ Let's Play!</button></div>`;
 }
@@ -836,7 +875,7 @@ function resetWorld() {
   player.position.set(0,0,CLEARING-2); player.rotation.y=0;
   const keep = G.phase;
   G = newState();
-  buildFriends(); buildBears(); spawnResources(16);
+  spawnInitialFriends(); buildBears(); spawnResources(16);
 }
 
 function endGame(won, reason) {
@@ -851,7 +890,7 @@ function endGame(won, reason) {
     ov.innerHTML = `<div class="card"><div class="big-emoji">🐻🌲💤</div>
       <h1 style="background:linear-gradient(135deg,#ff9a9a,#e23c3c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Game Over</h1>
       <p>${reason||'The forest got the better of you this time.'}</p>
-      <p>You saved ${G.saved} of ${FRIEND_COUNT} friends. Don't give up — try again! 💪</p>
+      <p>You saved ${G.saved} of ${MAX_KIDS} friends. Don't give up — try again! 💪</p>
       <button class="btn btn-amber" onclick="startGame()">🔁 Try Again</button></div>`;
   }
 }
