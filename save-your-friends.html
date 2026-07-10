@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Save Your Friends — A Forest Survival Adventure</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Poppins:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --night: #0a1512;
+    --forest: #0d1f1a;
+    --forest2: #12261f;
+    --cave: #2a1a10;
+    --amber: #ffb347;
+    --amber2: #ff7b2e;
+    --green: #56ab2f;
+    --green2: #a8e063;
+    --text: #eafff3;
+    --dim: #7fa598;
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: radial-gradient(ellipse at 50% -10%, #16302a 0%, var(--night) 65%);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Floating fireflies in the dark */
+  .fireflies { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .firefly {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    background: #ffe38a; box-shadow: 0 0 8px 2px rgba(255,200,80,0.7);
+    animation: float 8s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translate(0,0); opacity: 0.2; }
+    50% { transform: translate(20px,-30px); opacity: 1; }
+  }
+
+  #app {
+    position: relative; z-index: 1;
+    max-width: 720px; margin: 0 auto; padding: 18px;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+  }
+
+  h1, h2, .brand { font-family: 'Baloo 2', cursive; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-block; padding: 13px 28px; border: none; border-radius: 16px;
+    font-family: 'Baloo 2', cursive; font-size: 1.05em; font-weight: 700;
+    cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; color: #fff;
+    background: linear-gradient(135deg, var(--green), #3e8e28);
+    box-shadow: 0 5px 0 #2c6a1c, 0 8px 18px rgba(0,0,0,.35);
+    margin: 6px;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #2c6a1c, 0 4px 10px rgba(0,0,0,.35); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: 0 5px 0 #444; }
+  .btn-amber { background: linear-gradient(135deg, var(--amber), var(--amber2)); box-shadow: 0 5px 0 #b8531a, 0 8px 18px rgba(0,0,0,.35); }
+  .btn-amber:active { box-shadow: 0 2px 0 #b8531a; }
+  .btn-blue  { background: linear-gradient(135deg,#4facfe,#3b7dd8); box-shadow: 0 5px 0 #2a5aa0, 0 8px 18px rgba(0,0,0,.35); }
+  .btn-blue:active { box-shadow: 0 2px 0 #2a5aa0; }
+  .btn-red   { background: linear-gradient(135deg,#ff6a6a,#e23c3c); box-shadow: 0 5px 0 #a82626, 0 8px 18px rgba(0,0,0,.35); }
+  .btn-red:active { box-shadow: 0 2px 0 #a82626; }
+  .btn-small { padding: 9px 16px; font-size: .92em; margin: 4px; }
+
+  /* ---------- Title screen ---------- */
+  #title-screen { text-align: center; animation: pop .6s ease; margin-top: 6vh; }
+  #title-screen .logo { font-size: 4.5em; line-height: 1; filter: drop-shadow(0 0 22px rgba(255,140,40,.6)); }
+  #title-screen h1 {
+    font-size: 3em; margin: 6px 0; font-weight: 800;
+    background: linear-gradient(135deg, #ffd27f, #ff7b2e);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  #title-screen .subtitle { font-size: 1.15em; color: var(--dim); margin-bottom: 26px; }
+  #title-screen .madeby { margin-top: 30px; color: var(--dim); font-size: .9em; }
+
+  .card {
+    background: linear-gradient(160deg, var(--forest2), var(--forest));
+    border: 1px solid rgba(120,220,170,.15); border-radius: 22px;
+    padding: 22px; width: 100%; box-shadow: 0 12px 40px rgba(0,0,0,.45);
+    animation: pop .35s ease;
+  }
+  .card h2 { font-size: 1.6em; margin-bottom: 10px; color: #ffd27f; }
+  .card p, .card li { line-height: 1.7; color: #d6f2e6; }
+  .card ul { margin: 8px 0 8px 4px; list-style: none; }
+  .card li { margin: 6px 0; }
+
+  @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* ---------- Game HUD ---------- */
+  .game { width: 100%; animation: pop .3s ease; }
+  .topbar {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin-bottom: 12px;
+  }
+  .stat {
+    background: rgba(0,0,0,.35); border: 1px solid rgba(120,220,170,.15);
+    border-radius: 14px; padding: 7px 12px; min-width: 92px; text-align: center;
+  }
+  .stat .lbl { font-size: .72em; color: var(--dim); letter-spacing: .5px; }
+  .stat .val { font-size: 1.15em; font-weight: 700; font-family: 'Baloo 2'; }
+  .bar { height: 8px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; margin-top: 4px; }
+  .bar > span { display: block; height: 100%; border-radius: 6px; transition: width .3s ease; }
+  .fill-fire  { background: linear-gradient(90deg,#ff5a2e,#ffd257); }
+  .fill-food  { background: linear-gradient(90deg,#e2603c,#ffb36b); }
+  .fill-water { background: linear-gradient(90deg,#2e9bff,#7fe3ff); }
+
+  .objective {
+    text-align:center; font-family:'Baloo 2'; font-weight:700; color:#ffd27f;
+    margin: 4px 0 12px; font-size: 1.05em;
+  }
+
+  /* ---------- Map grid ---------- */
+  .map {
+    display: grid; gap: 6px; width: 100%; max-width: 460px; margin: 0 auto 14px;
+    aspect-ratio: 1; touch-action: manipulation;
+  }
+  .tile {
+    border: none; border-radius: 12px; cursor: default;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.7em; position: relative; transition: transform .12s ease, box-shadow .12s ease;
+    background: #060d0b; box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+    aspect-ratio: 1; user-select: none;
+  }
+  .tile.dark { background: repeating-linear-gradient(45deg,#070f0c,#070f0c 6px,#0a1310 6px,#0a1310 12px); }
+  .tile.revealed { background: linear-gradient(160deg,#123024,#0c2019); box-shadow: inset 0 0 0 1px rgba(120,220,170,.10); }
+  .tile.home { background: radial-gradient(circle at 50% 45%, #7a3f14, #3a1e0a); box-shadow: 0 0 18px rgba(255,140,40,.5), inset 0 0 0 1px rgba(255,180,90,.4); }
+  .tile.reachable { cursor: pointer; box-shadow: 0 0 0 2px var(--green2), 0 0 12px rgba(168,224,99,.5); }
+  .tile.reachable:hover { transform: scale(1.06); }
+  .tile.player { box-shadow: 0 0 0 3px #ffd27f, 0 0 16px rgba(255,210,127,.7); z-index:2; }
+  .tile .badge {
+    position:absolute; bottom:-4px; right:-4px; font-size:.5em;
+    background:#e23c3c; color:#fff; border-radius:50%; width:1.5em; height:1.5em;
+    display:flex; align-items:center; justify-content:center; font-family:'Baloo 2'; font-weight:700;
+  }
+  .tile .flamewrap { position:absolute; top:2px; font-size:.7em; }
+
+  /* ---------- Action buttons ---------- */
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 10px; }
+  .hint { text-align:center; color: var(--dim); font-size:.85em; margin: 2px 0 10px; }
+
+  /* ---------- Log ---------- */
+  .log {
+    background: rgba(0,0,0,.4); border-radius: 14px; padding: 10px 14px;
+    width: 100%; max-height: 130px; overflow-y: auto; font-size: .9em; line-height: 1.6;
+    border: 1px solid rgba(120,220,170,.12);
+  }
+  .log p { margin: 2px 0; color: #cdeede; }
+  .log p.big { color: #ffd27f; font-weight: 600; }
+  .log p.bad { color: #ff9a9a; }
+  .log p.good { color: #a8e063; }
+
+  /* ---------- Modal (events / crafting) ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(3,8,6,.82); z-index: 50;
+    display: flex; align-items: center; justify-content: center; padding: 18px;
+    animation: pop .25s ease;
+  }
+  .modal {
+    background: linear-gradient(160deg,#173328,#0e2019);
+    border: 1px solid rgba(255,180,90,.25); border-radius: 24px;
+    padding: 26px; max-width: 460px; width: 100%; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  }
+  .modal .icon { font-size: 3.4em; line-height: 1; margin-bottom: 6px; }
+  .modal h2 { font-size: 1.6em; color: #ffd27f; margin-bottom: 8px; }
+  .modal p { color: #d6f2e6; line-height: 1.6; margin-bottom: 14px; }
+  .craft-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+  .craft-item {
+    background: rgba(0,0,0,.3); border:1px solid rgba(120,220,170,.15);
+    border-radius:16px; padding:12px 8px; text-align:center;
+  }
+  .craft-item .ci-emoji { font-size:2em; }
+  .craft-item .ci-name { font-family:'Baloo 2'; font-weight:700; margin:2px 0; }
+  .craft-item .ci-cost { font-size:.82em; color:var(--dim); margin-bottom:8px; }
+  .craft-item.owned { opacity:.6; }
+  .tools-owned { margin-top: 4px; font-size:.85em; color: var(--dim); }
+
+  .end-screen { text-align:center; margin-top: 6vh; }
+  .end-screen .big-emoji { font-size: 5em; }
+  .end-screen h1 { font-size: 2.6em; margin: 8px 0; }
+  .win h1 { color:#a8e063; }
+  .lose h1 { color:#ff8a8a; }
+</style>
+</head>
+<body>
+<div class="fireflies" id="fireflies"></div>
+<div id="app"></div>
+
+<script>
+/* ============================================================
+   SAVE YOUR FRIENDS — a forest survival adventure
+   Made from Noam's game plan (age 9) for Shir & Noam's Game Studio
+   ============================================================ */
+
+const GRID = 6;
+const FRIEND_NAMES = ["Shir", "Ben", "Maya"];
+
+// Tunable game balance
+const FIRE_BURN_DAY = 6;
+const FIRE_BURN_NIGHT = 9;
+const HUNGER_DROP = 3;
+const THIRST_DROP = 3;
+const WOOD_TO_FIRE = 25;     // fire points per wood burned
+const FOOD_RESTORE = 30;
+const WATER_RESTORE = 30;
+const BASE_CARRY = 6;
+const SACK_CARRY = 12;
+const MOVES_PER_NIGHT = 6;   // day/night flips every N moves
+
+let S = null; // game state
+
+/* ---------------- Setup ---------------- */
+function newGame() {
+  const home = { x: Math.floor(GRID/2), y: Math.floor(GRID/2) };
+
+  // Build tiles with hidden resources
+  const tiles = [];
+  for (let y = 0; y < GRID; y++) {
+    const row = [];
+    for (let x = 0; x < GRID; x++) {
+      let resource = null;
+      const r = Math.random();
+      if (r < 0.34) resource = 'wood';
+      else if (r < 0.54) resource = 'food';
+      else if (r < 0.72) resource = 'water';
+      row.push({ resource, revealed: false, friend: null, terrainSeen: false });
+    }
+    tiles.push(row);
+  }
+  // Home tile: no resource
+  tiles[home.y][home.x].resource = null;
+  tiles[home.y][home.x].revealed = true;
+  tiles[home.y][home.x].terrainSeen = true;
+
+  // Place 3 trapped friends on far-ish tiles
+  const friends = [];
+  const used = new Set([home.y*GRID+home.x]);
+  for (const name of FRIEND_NAMES) {
+    let fx, fy, tries = 0;
+    do {
+      fx = Math.floor(Math.random()*GRID);
+      fy = Math.floor(Math.random()*GRID);
+      tries++;
+    } while ((used.has(fy*GRID+fx) ||
+             (Math.abs(fx-home.x)+Math.abs(fy-home.y) < 2)) && tries < 100);
+    used.add(fy*GRID+fx);
+    tiles[fy][fx].friend = name;
+    tiles[fy][fx].resource = null;
+    friends.push({ name, x: fx, y: fy, state: 'trapped' });
+  }
+
+  S = {
+    screen: 'playing',
+    home,
+    player: { x: home.x, y: home.y },
+    fire: 100, hunger: 100, thirst: 100, hearts: 3,
+    day: 1, isNight: false, moves: 0,
+    inv: { wood: 3, food: 1, water: 1 },
+    tools: { map:false, flashlight:false, axe:false, sack:false, spear:false, rope:false },
+    tiles, friends,
+    following: [],       // names of friends currently walking with you
+    savedCount: 0,
+    log: [],
+    modal: null,
+  };
+  logMsg("You wake up in your cozy cave. The campfire crackles. 🔥", 'big');
+  logMsg("Your friends are lost in the dark forest. Go save them!", '');
+  reveal();
+}
+
+/* ---------------- Helpers ---------------- */
+function carryMax() { return S.tools.sack ? SACK_CARRY : BASE_CARRY; }
+function carried() { return S.inv.wood + S.inv.food + S.inv.water; }
+function atHome() { return S.player.x === S.home.x && S.player.y === S.home.y; }
+function tileAt(x,y) { return S.tiles[y][x]; }
+function logMsg(text, cls='') { S.log.unshift({ text, cls }); if (S.log.length > 30) S.log.pop(); }
+
+function reveal() {
+  const {x,y} = S.player;
+  tileAt(x,y).revealed = true; tileAt(x,y).terrainSeen = true;
+  if (S.tools.flashlight) {
+    [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dx,dy]) => {
+      const nx=x+dx, ny=y+dy;
+      if (nx>=0&&nx<GRID&&ny>=0&&ny<GRID) tileAt(nx,ny).terrainSeen = true;
+    });
+  }
+  if (S.tools.map) {
+    for (let yy=0; yy<GRID; yy++) for (let xx=0; xx<GRID; xx++) tileAt(xx,yy).terrainSeen = true;
+  }
+}
+
+function checkVitals() {
+  // Starvation / thirst hurts you
+  if (S.hunger <= 0 || S.thirst <= 0) {
+    S.hearts -= 1;
+    if (S.hunger <= 0) logMsg("You're so hungry it hurts! 🍎❤️", 'bad');
+    if (S.thirst <= 0) logMsg("You're too thirsty! 💧❤️", 'bad');
+    S.hunger = Math.max(S.hunger, 8);
+    S.thirst = Math.max(S.thirst, 8);
+  }
+  if (S.hearts <= 0) return lose("You ran out of energy in the forest.");
+  if (S.fire <= 0) return lose("Your campfire went out and bears raided the cave!");
+}
+
+/* ---------------- Movement ---------------- */
+function moveTo(x, y) {
+  if (S.modal) return;
+  // must be orthogonally adjacent
+  const d = Math.abs(x - S.player.x) + Math.abs(y - S.player.y);
+  if (d !== 1) return;
+
+  S.player.x = x; S.player.y = y;
+  S.moves++;
+
+  // Time passes: fire burns, you get hungry & thirsty
+  S.fire = Math.max(0, S.fire - (S.isNight ? FIRE_BURN_NIGHT : FIRE_BURN_DAY));
+  S.hunger = Math.max(0, S.hunger - HUNGER_DROP);
+  S.thirst = Math.max(0, S.thirst - THIRST_DROP);
+
+  // Day / night cycle
+  if (S.moves % MOVES_PER_NIGHT === 0) {
+    S.isNight = !S.isNight;
+    if (S.isNight) logMsg("🌙 Night falls. The forest gets darker and colder...", 'big');
+    else { S.day++; logMsg("☀️ A new day dawns! (Day " + S.day + ")", 'big'); }
+  }
+
+  reveal();
+
+  const t = tileAt(x, y);
+
+  // Arrive home
+  if (atHome()) {
+    dropOffFriends();
+  } else if (t.friend) {
+    tryRescue(t);
+  } else {
+    collectResource(t);
+    maybeRandomEvent();
+  }
+
+  checkVitals();
+  render();
+}
+
+function collectResource(t) {
+  if (!t.resource) return;
+  if (carried() >= carryMax()) {
+    logMsg("You found " + emoji(t.resource) + " but your hands are full! Craft a Sack. 🎒", 'bad');
+    return;
+  }
+  const amount = (t.resource === 'wood' && S.tools.axe) ? 2 : 1;
+  const room = carryMax() - carried();
+  const take = Math.min(amount, room);
+  S.inv[t.resource] += take;
+  logMsg("You gathered " + emoji(t.resource).repeat(take) + " " + t.resource + "!", 'good');
+  t.resource = null;
+}
+
+function emoji(k){ return k==='wood'?'🪵':k==='food'?'🍎':k==='water'?'💧':'❔'; }
+
+/* ---------------- Friends ---------------- */
+function tryRescue(t) {
+  const friend = S.friends.find(f => f.name === t.friend && f.state === 'trapped');
+  if (!friend) return;
+  if (S.tools.rope) {
+    friend.state = 'following';
+    S.following.push(friend.name);
+    t.friend = null;
+    logMsg("🪢 You used your rope to free " + friend.name + "! They're following you. Get them home! 🏠", 'big');
+  } else {
+    logMsg("😢 You found " + friend.name + " trapped, but you need a 🪢 Rope to free them!", 'bad');
+  }
+}
+
+function dropOffFriends() {
+  if (S.following.length > 0) {
+    S.following.forEach(name => {
+      const f = S.friends.find(fr => fr.name === name);
+      f.state = 'saved';
+      S.savedCount++;
+      logMsg("🎉 " + name + " is safe by the campfire! (" + S.savedCount + "/" + FRIEND_NAMES.length + " saved)", 'good');
+    });
+    S.following = [];
+  }
+  if (S.savedCount >= FRIEND_NAMES.length) {
+    return win();
+  }
+}
+
+/* ---------------- Random events ---------------- */
+function maybeRandomEvent() {
+  const chance = S.isNight ? 0.42 : 0.26;
+  if (Math.random() > chance) return;
+
+  const roll = Math.random();
+  if (roll < 0.34) {
+    // Wolf
+    S.modal = {
+      type: 'event', icon: '🐺', title: 'A wolf!',
+      text: "A grey wolf steps out from the trees and growls at you. What do you do?",
+      options: [
+        { label: S.tools.spear ? '🗡️ Fight it off' : '🗡️ Fight (no spear!)', act: () => {
+            if (S.tools.spear) { logMsg("🗡️ You waved your spear and the wolf ran away!", 'good'); }
+            else { S.hearts--; logMsg("The wolf nipped you! You lost a heart. ❤️", 'bad'); }
+          }},
+        { label: '🏃 Run away', act: () => {
+            if (Math.random() < 0.6) logMsg("You dashed away safely! 🏃", 'good');
+            else { S.hearts--; logMsg("The wolf caught up and scratched you. ❤️", 'bad'); }
+          }},
+        { label: '🍎 Toss it food', act: () => {
+            if (S.inv.food > 0) { S.inv.food--; logMsg("You tossed food — the wolf trotted off happy! 🍎", 'good'); }
+            else { S.hearts--; logMsg("No food to give! The wolf nipped you. ❤️", 'bad'); }
+          }},
+      ]
+    };
+  } else if (roll < 0.5) {
+    // Bear — scarier
+    S.modal = {
+      type: 'event', icon: '🐻', title: 'A BEAR!',
+      text: "A big brown bear blocks the path! Your heart pounds. What now?",
+      options: [
+        { label: S.tools.spear ? '🗡️ Brave it with your spear' : '🗡️ Fight (no spear!)', act: () => {
+            if (S.tools.spear) logMsg("🗡️ You stood tall with your spear and the bear backed away!", 'good');
+            else { S.hearts -= 2; logMsg("The bear swiped you hard! You lost 2 hearts. ❤️❤️", 'bad'); }
+          }},
+        { label: '🙈 Hide behind a tree', act: () => {
+            if (Math.random() < 0.5) logMsg("You held your breath... the bear wandered off! 🙈", 'good');
+            else { S.hearts--; logMsg("The bear sniffed you out! You lost a heart. ❤️", 'bad'); }
+          }},
+        { label: '🍎 Throw food & run', act: () => {
+            if (S.inv.food > 0) { S.inv.food--; logMsg("The bear chased the food while you escaped! 🍎🏃", 'good'); }
+            else { S.hearts--; logMsg("Nothing to throw! The bear clipped you. ❤️", 'bad'); }
+          }},
+      ]
+    };
+  } else if (roll < 0.68) {
+    // Bonus supplies
+    const kind = ['wood','food','water'][Math.floor(Math.random()*3)];
+    S.modal = {
+      type: 'event', icon: kind==='wood'?'🪵':kind==='food'?'🍇':'🏞️', title: 'Lucky find!',
+      text: kind==='wood' ? "You found a pile of dry branches!" :
+            kind==='food' ? "A berry bush full of yummy berries!" :
+                            "A sparkling little stream!",
+      options: [
+        { label: 'Grab it! ✨', act: () => {
+            const room = carryMax() - carried();
+            const take = Math.min(2, room);
+            if (take > 0) { S.inv[kind] += take; logMsg("You collected " + emoji(kind).repeat(take) + "!", 'good'); }
+            else logMsg("Your hands were too full to carry it. 🎒", 'bad');
+          }},
+      ]
+    };
+  } else if (roll < 0.82) {
+    // Hidden trap
+    S.modal = {
+      type: 'event', icon: '🕳️', title: 'A hidden trap!',
+      text: "Snap! Your foot slips toward a covered pit in the ground!",
+      options: [
+        { label: S.tools.rope ? '🪢 Climb out with rope' : '💪 Scramble out', act: () => {
+            if (S.tools.rope) logMsg("🪢 You used your rope to climb out easily!", 'good');
+            else if (Math.random() < 0.5) logMsg("You scrambled out, phew! 💪", 'good');
+            else { S.hearts--; logMsg("You tumbled in and bumped your knee. ❤️", 'bad'); }
+          }},
+      ]
+    };
+  } else {
+    // Friendly forest creature — encouragement
+    S.modal = {
+      type: 'event', icon: '🦉', title: 'A wise owl',
+      text: "A friendly owl hoots down at you: \"Keep your fire fed and your friends will be safe. Hoot hoot!\"",
+      options: [ { label: 'Thank you, owl! 🦉', act: () => {} } ]
+    };
+  }
+}
+
+function chooseEvent(i) {
+  const opt = S.modal.options[i];
+  S.modal = null;
+  opt.act();
+  checkVitals();
+  render();
+}
+
+/* ---------------- Home actions ---------------- */
+function feedFire() {
+  if (S.inv.wood <= 0) { logMsg("No wood to burn! Go find some 🪵", 'bad'); render(); return; }
+  S.inv.wood--;
+  S.fire = Math.min(100, S.fire + WOOD_TO_FIRE);
+  logMsg("You added wood to the fire. 🔥 It roars up warm and bright!", 'good');
+  render();
+}
+function eat() {
+  if (S.inv.food <= 0) { logMsg("No food to eat! 🍎", 'bad'); render(); return; }
+  S.inv.food--; S.hunger = Math.min(100, S.hunger + FOOD_RESTORE);
+  logMsg("Yum! You ate some food. 🍎", 'good'); render();
+}
+function drink() {
+  if (S.inv.water <= 0) { logMsg("No water to drink! 💧", 'bad'); render(); return; }
+  S.inv.water--; S.thirst = Math.min(100, S.thirst + WATER_RESTORE);
+  logMsg("Gulp! You drank some water. 💧", 'good'); render();
+}
+function rest() {
+  if (!atHome()) return;
+  if (S.hearts < 3 && S.inv.food > 0) {
+    S.inv.food--; S.hearts++;
+    logMsg("You rested by the fire and ate a snack. +1 heart! ❤️", 'good');
+  } else if (S.hearts >= 3) {
+    logMsg("You're already full of energy! ❤️❤️❤️", '');
+  } else {
+    logMsg("You need food 🍎 to rest and heal.", 'bad');
+  }
+  render();
+}
+
+/* ---------------- Crafting ---------------- */
+const RECIPES = [
+  { key:'rope',       emoji:'🪢', name:'Rope',       cost:3, desc:'Free trapped friends!' },
+  { key:'map',        emoji:'🗺️', name:'Map',        cost:4, desc:'See the whole forest' },
+  { key:'flashlight', emoji:'🔦', name:'Flashlight', cost:3, desc:'See tiles next to you' },
+  { key:'axe',        emoji:'🪓', name:'Axe',        cost:4, desc:'Chop 2x wood' },
+  { key:'sack',       emoji:'🎒', name:'Sack',       cost:3, desc:'Carry more stuff' },
+  { key:'spear',      emoji:'🗡️', name:'Spear',      cost:5, desc:'Win bear & wolf fights' },
+];
+function openCraft() { S.modal = { type:'craft' }; render(); }
+function craft(key) {
+  const r = RECIPES.find(x => x.key === key);
+  if (S.tools[key]) return;
+  if (S.inv.wood < r.cost) { logMsg("Not enough wood for " + r.name + " (need " + r.cost + " 🪵)", 'bad'); render(); return; }
+  S.inv.wood -= r.cost; S.tools[key] = true;
+  logMsg("🛠️ You crafted a " + r.name + " " + r.emoji + "!", 'good');
+  if (key === 'map' || key === 'flashlight') reveal();
+  render();
+}
+
+/* ---------------- Win / Lose ---------------- */
+function win() { S.screen = 'win'; render(); }
+function lose(reason) { S.screen = 'lose'; S.loseReason = reason; render(); }
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+const app = () => document.getElementById('app');
+
+function render() {
+  if (!S) return renderTitle();
+  if (S.screen === 'title') return renderTitle();
+  if (S.screen === 'howto') return renderHowTo();
+  if (S.screen === 'win') return renderEnd(true);
+  if (S.screen === 'lose') return renderEnd(false);
+  renderGame();
+}
+
+function renderTitle() {
+  app().innerHTML = `
+    <div id="title-screen">
+      <div class="logo">🏕️🌲🔥</div>
+      <h1>Save Your Friends</h1>
+      <div class="subtitle">A dark-forest survival adventure</div>
+      <div>
+        <button class="btn btn-amber" onclick="startGame()">▶ Play</button>
+        <button class="btn btn-blue" onclick="showHowTo()">📖 How to Play</button>
+      </div>
+      <div class="madeby">🚀 Made with big ideas by Noam · Shir &amp; Noam's Game Studio</div>
+    </div>`;
+}
+
+function showHowTo() { S = S || {}; S.screen = 'howto'; render(); }
+function renderHowTo() {
+  app().innerHTML = `
+    <div class="card" style="margin-top:4vh;">
+      <h2>📖 How to Play</h2>
+      <p><b>Your mission:</b> find your 3 lost friends in the dark forest and bring them home safe! 🦸</p>
+      <ul>
+        <li>🚶 <b>Move</b> by clicking a glowing tile next to you (or use arrow keys / WASD).</li>
+        <li>🔥 <b>Keep your fire burning!</b> It drops every step. Go home 🏕️ and burn wood 🪵 to feed it. If it hits 0, bears raid your cave — game over!</li>
+        <li>🪵🍎💧 <b>Gather</b> wood, food, and water as you explore. Eat and drink so you don't run out of energy.</li>
+        <li>🛠️ <b>Craft tools</b> at your cave. You NEED a 🪢 <b>Rope</b> to free trapped friends!</li>
+        <li>🗺️🔦 A <b>Map</b> shows the whole forest and a <b>Flashlight</b> lets you see nearby tiles in the dark.</li>
+        <li>🐻🐺 <b>Watch out</b> for bears and wolves — you'll choose how to handle them!</li>
+        <li>🏠 Free a friend, then walk them <b>back to your cave</b> to save them. Save all 3 to win! 🎉</li>
+      </ul>
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn btn-amber" onclick="startGame()">▶ Let's Play!</button>
+      </div>
+    </div>`;
+}
+
+function startGame() { newGame(); render(); }
+
+function heart(n) { return '❤️'.repeat(Math.max(0,n)) + '🖤'.repeat(Math.max(0,3-n)); }
+
+function renderGame() {
+  const remaining = FRIEND_NAMES.length - S.savedCount;
+  const carryTxt = carried() + "/" + carryMax();
+
+  // HUD
+  let html = `<div class="game">
+    <div class="topbar">
+      <div class="stat">
+        <div class="lbl">${S.isNight ? '🌙 NIGHT' : '☀️ DAY ' + S.day}</div>
+        <div class="val">${heart(S.hearts)}</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">🔥 FIRE</div>
+        <div class="val">${Math.round(S.fire)}</div>
+        <div class="bar"><span class="fill-fire" style="width:${S.fire}%"></span></div>
+      </div>
+      <div class="stat">
+        <div class="lbl">🍎 FOOD</div>
+        <div class="val">${Math.round(S.hunger)}</div>
+        <div class="bar"><span class="fill-food" style="width:${S.hunger}%"></span></div>
+      </div>
+      <div class="stat">
+        <div class="lbl">💧 WATER</div>
+        <div class="val">${Math.round(S.thirst)}</div>
+        <div class="bar"><span class="fill-water" style="width:${S.thirst}%"></span></div>
+      </div>
+    </div>
+
+    <div class="topbar">
+      <div class="stat"><div class="lbl">BACKPACK ${carryTxt}</div>
+        <div class="val" style="font-size:1em">🪵 ${S.inv.wood} &nbsp; 🍎 ${S.inv.food} &nbsp; 💧 ${S.inv.water}</div>
+      </div>
+    </div>
+
+    <div class="objective">🦸 Friends to save: ${remaining} ${S.following.length ? '· 🚶 walking with you: ' + S.following.join(', ') : ''}</div>`;
+
+  // Map
+  html += `<div class="map" style="grid-template-columns:repeat(${GRID},1fr)">`;
+  for (let y=0; y<GRID; y++) {
+    for (let x=0; x<GRID; x++) {
+      const t = tileAt(x,y);
+      const isPlayer = (S.player.x===x && S.player.y===y);
+      const isHome = (S.home.x===x && S.home.y===y);
+      const d = Math.abs(x-S.player.x)+Math.abs(y-S.player.y);
+      const reachable = (d===1 && !S.modal);
+
+      let cls = 'tile';
+      let content = '';
+
+      if (isHome) { cls += ' home'; content = '🏕️'; }
+      else if (t.terrainSeen || t.revealed) { cls += ' revealed'; }
+      else { cls += ' dark'; }
+
+      // What shows on the tile
+      if (isPlayer) {
+        content = '🧑' ;
+      } else if (isHome) {
+        content = '🏕️';
+      } else if ((t.terrainSeen || t.revealed) && t.friend) {
+        content = '🆘';
+      } else if (t.revealed && t.resource) {
+        content = emoji(t.resource);
+      } else if (t.terrainSeen && !t.revealed) {
+        content = '🌲';
+      }
+
+      if (reachable) cls += ' reachable';
+      if (isPlayer) cls += ' player';
+
+      // fire badge on home
+      let extra = '';
+      if (isHome && !isPlayer) extra = `<span class="flamewrap">🔥</span>`;
+      const friendBadge = isPlayer && S.following.length ? `<span class="badge">${S.following.length}</span>` : '';
+
+      const click = reachable ? `onclick="moveTo(${x},${y})"` : '';
+      html += `<div class="${cls}" ${click}>${content}${extra}${friendBadge}</div>`;
+    }
+  }
+  html += `</div>`;
+
+  // Actions
+  html += `<div class="actions">`;
+  if (atHome()) {
+    html += `<button class="btn btn-amber btn-small" onclick="feedFire()">🔥 Feed Fire (🪵1)</button>`;
+    html += `<button class="btn btn-blue btn-small" onclick="openCraft()">🛠️ Craft</button>`;
+    html += `<button class="btn btn-green btn-small" onclick="rest()">😴 Rest (🍎1 → ❤️)</button>`;
+  }
+  html += `<button class="btn btn-green btn-small" onclick="eat()">🍎 Eat</button>`;
+  html += `<button class="btn btn-blue btn-small" onclick="drink()">💧 Drink</button>`;
+  html += `</div>`;
+
+  html += `<div class="hint">${atHome()
+      ? "🏕️ You're home safe. Feed your fire, craft tools, then head out!"
+      : "Click a glowing tile to move. Head 🏕️ home to feed your fire before it dies!"}</div>`;
+
+  // Log
+  html += `<div class="log">`;
+  S.log.forEach(l => html += `<p class="${l.cls}">${l.text}</p>`);
+  html += `</div></div>`;
+
+  app().innerHTML = html;
+
+  // Modal on top
+  if (S.modal) renderModal();
+}
+
+function renderModal() {
+  let inner = '';
+  if (S.modal.type === 'event') {
+    inner = `<div class="icon">${S.modal.icon}</div>
+      <h2>${S.modal.title}</h2>
+      <p>${S.modal.text}</p>
+      <div>`;
+    S.modal.options.forEach((o,i) => {
+      inner += `<button class="btn btn-small" onclick="chooseEvent(${i})">${o.label}</button>`;
+    });
+    inner += `</div>`;
+  } else if (S.modal.type === 'craft') {
+    inner = `<div class="icon">🛠️</div><h2>Crafting Table</h2>
+      <p>You have <b>${S.inv.wood} 🪵</b> wood. Spend it to build tools!</p>
+      <div class="craft-grid">`;
+    RECIPES.forEach(r => {
+      const owned = S.tools[r.key];
+      const can = !owned && S.inv.wood >= r.cost;
+      inner += `<div class="craft-item ${owned?'owned':''}">
+        <div class="ci-emoji">${r.emoji}</div>
+        <div class="ci-name">${r.name}</div>
+        <div class="ci-cost">${owned ? '✅ Built!' : r.cost + ' 🪵 · ' + r.desc}</div>
+        ${owned ? '' : `<button class="btn btn-small ${can?'btn-green':''}" ${can?'':'disabled'} onclick="craft('${r.key}')">Build</button>`}
+      </div>`;
+    });
+    inner += `</div>
+      <div style="margin-top:16px;"><button class="btn btn-amber btn-small" onclick="closeModal()">Done</button></div>`;
+  }
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `<div class="modal">${inner}</div>`;
+  app().appendChild(ov);
+}
+function closeModal() { S.modal = null; render(); }
+
+function renderEnd(won) {
+  if (won) {
+    app().innerHTML = `
+      <div class="end-screen win">
+        <div class="big-emoji">🎉🏕️🦸</div>
+        <h1>You Saved Everyone!</h1>
+        <div class="card" style="max-width:460px;margin:10px auto;">
+          <p>All your friends are home safe by the warm campfire. 🔥</p>
+          <p>You survived ${S.day} day${S.day>1?'s':''} in the dark forest and never let your fire go out. You're a true hero! 🌟</p>
+        </div>
+        <button class="btn btn-amber" onclick="startGame()">🔁 Play Again</button>
+        <button class="btn btn-blue" onclick="location.reload()">🏠 Title</button>
+      </div>`;
+  } else {
+    app().innerHTML = `
+      <div class="end-screen lose">
+        <div class="big-emoji">🐻🌲💤</div>
+        <h1>Game Over</h1>
+        <div class="card" style="max-width:460px;margin:10px auto;">
+          <p>${S.loseReason || 'The forest got the better of you this time.'}</p>
+          <p>You saved ${S.savedCount} of ${FRIEND_NAMES.length} friends. Don't give up — try again! 💪</p>
+        </div>
+        <button class="btn btn-amber" onclick="startGame()">🔁 Try Again</button>
+        <button class="btn btn-blue" onclick="location.reload()">🏠 Title</button>
+      </div>`;
+  }
+}
+
+/* ---------------- Keyboard movement ---------------- */
+document.addEventListener('keydown', (e) => {
+  if (!S || S.screen !== 'playing' || S.modal) return;
+  let dx=0, dy=0;
+  const k = e.key.toLowerCase();
+  if (k==='arrowup'||k==='w') dy=-1;
+  else if (k==='arrowdown'||k==='s') dy=1;
+  else if (k==='arrowleft'||k==='a') dx=-1;
+  else if (k==='arrowright'||k==='d') dx=1;
+  else return;
+  e.preventDefault();
+  const nx=S.player.x+dx, ny=S.player.y+dy;
+  if (nx>=0&&nx<GRID&&ny>=0&&ny<GRID) moveTo(nx,ny);
+});
+
+/* ---------------- Fireflies ambiance ---------------- */
+(function makeFireflies(){
+  const box = document.getElementById('fireflies');
+  for (let i=0;i<18;i++){
+    const f = document.createElement('div');
+    f.className='firefly';
+    f.style.left = Math.random()*100+'%';
+    f.style.top = Math.random()*100+'%';
+    f.style.animationDelay = (Math.random()*8)+'s';
+    f.style.animationDuration = (6+Math.random()*6)+'s';
+    box.appendChild(f);
+  }
+})();
+
+/* ---------------- Boot ---------------- */
+renderTitle();
+</script>
+</body>
+</html>
